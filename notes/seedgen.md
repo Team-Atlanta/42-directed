@@ -202,7 +202,7 @@ The infrastructure components provide the underlying technical capabilities that
 |------|-----------------|---------------------|-------------------|------------------|----------------|---------------|-------------------|
 | **Full** | C/C++ only | Yes (instrumented) | Yes (via SeedD) | 3 iterations with refinement | Slower | Complex (SeedD, getcov, LLVM) | Always for C/C++ |
 | **Mini** | All languages | No | No | Single generation | Faster | Simple (Docker only) | C/C++ only, skip for Java |
-| **MCP** | All languages | No |  |  |  |  |  |
+| **MCP** | All languages | No | No (static only) | Single-pass with MCP context | Medium | MCP servers (Node.js/Python) | None (direct to triage) |
 | **Codex** | All languages | No |  |  |  |  | C/C++ only, skip for Java |
 
 
@@ -231,5 +231,16 @@ Mini Mode uses static harness analysis without compilation for all programming l
 See the [detailed documentation](./seedgen-minimode.md) for the complete workflow, architecture diagrams, and implementation specifics.
 
 ### 3. MCP Mode
+
+**For comprehensive technical details, see [MCP Mode Deep Dive](./seedgen-mcpmode.md)**
+
+MCP Mode uses Model Context Protocol servers for deep code analysis without compilation. Key highlights:
+- AST-based analysis via Tree-sitter
+- Direct filesystem access through MCP servers
+- Backdoor and vulnerability detection
+- Direct bug triage submission
+- Supports all programming languages
+
+See the [detailed documentation](./seedgen-mcpmode.md) for the complete workflow, architecture diagrams, and implementation specifics.
 
 ### 4. Codex Mode (Not used in competition)
