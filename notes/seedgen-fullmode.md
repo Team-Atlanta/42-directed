@@ -250,7 +250,7 @@ graph TB
 
 ## Detailed Component Analysis
 
-### 1. Project Instrumentation ([`compile_project`](../components/seedgen/infra/aixcc.py:141))
+### 1. Project Instrumentation ([`compile_project`](../components/seedgen/infra/aixcc.py#L141))
 
 The instrumentation phase transforms the original source code into a heavily instrumented version that can provide detailed runtime information.
 
@@ -347,54 +347,106 @@ Script Evolution Pipeline:
 - Locates `LLVMFuzzerTestOneInput` as harness entry point
 - Retrieves complete harness source code via `GetRegionSource()`
 
-#### Step 2: Initial Script Generation ([`generate_first_script`](../components/seedgen/seedgen2/agents/glance.py) at [seedgen.py:125](../components/seedgen/seedgen2/seedgen.py))
+#### Step 2: Initial Script Generation ([`generate_first_script`](../components/seedgen/seedgen2/agents/glance.py) at [seedgen.py#L125](../components/seedgen/seedgen2/seedgen.py#L125))
 - Uses **Sowbot** graph (LangGraph-based workflow)
 - LLM analyzes harness code to understand input requirements
-- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py:12)
+- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py#L12)
 - Generates the **FIRST Python script** that creates test inputs
 - Validates script syntax and executes to create 100 initial seeds
 - Stores as `generator_0.py`, seeds as `seed_0_0` to `seed_0_99`
 
-#### Step 3: Structure Documentation Creation ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py:128](../components/seedgen/seedgen2/seedgen.py))
+#### Step 3: Structure Documentation Creation ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L128](../components/seedgen/seedgen2/seedgen.py#L128))
 - Analyzes coverage gaps from initial seeds
 - Uses `get_related_functions()` to find dependent code
-- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py:26)
+- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L26)
 - LLM generates documentation (NOT a script) describing:
   - Required input structure
   - Data field specifications
   - Edge cases for better coverage
 
-#### Step 4: Filetype-Based Script Replacement ([`_generate_filetype_seeds`](../components/seedgen/seedgen2/seedgen.py) at [seedgen.py:132](../components/seedgen/seedgen2/seedgen.py))
+#### Step 4: Filetype-Based Script Replacement ([`_generate_filetype_seeds`](../components/seedgen/seedgen2/seedgen.py) at [seedgen.py#L132](../components/seedgen/seedgen2/seedgen.py#L132))
 - Identifies target file format (XML, JSON, binary, etc.)
-  - Prompt: [`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py:11)
+  - Prompt: [`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py#L11)
 - Generates a reference script with format-specific logic
-  - Prompt: [`PROMPT_reference`](../components/seedgen/seedgen2/agents/filetype.py:24)
+  - Prompt: [`PROMPT_reference`](../components/seedgen/seedgen2/agents/filetype.py#L24)
 - **REPLACES the original script** with filetype-aware version:
-  - Prompt: [`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py:28)
+  - Prompt: [`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py#L28)
   - **XML**: Proper tag structure, attributes, namespaces
   - **JSON**: Valid object/array structures, type constraints
   - **Binary**: Headers, magic bytes, checksums
 - Stores as `generator_1.py`, seeds as `seed_1_0` to `seed_1_99`
 
-#### Step 5: Documentation Enhancement ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py:136](../components/seedgen/seedgen2/seedgen.py))
+#### Step 5: Documentation Enhancement ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L136](../components/seedgen/seedgen2/seedgen.py#L136))
 - Analyzes coverage from the filetype-aware script
 - **Improves existing documentation** with new insights
-- Prompt: [`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py:43)
+- Prompt: [`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L43)
 - Adds missing requirements discovered from filetype script execution
 
-#### Step 6: Final Script Alignment ([`align_script`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py:139](../components/seedgen/seedgen2/seedgen.py))
+#### Step 6: Final Script Alignment ([`align_script`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L139](../components/seedgen/seedgen2/seedgen.py#L139))
 - Uses **Sowbot** graph (not Plainbot as documentation might suggest)
 - **REPLACES the filetype script** with documentation-aligned version
-- Prompt: [`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py:11)
+- Prompt: [`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py#L11)
 - Ensures script follows all documented requirements
 - Addresses remaining coverage gaps
 - Stores as `generator_2.py`, seeds as `seed_2_0` to `seed_2_99`
 
-#### Step 7: Coverage Aggregation ([`get_merged_coverage`](../components/seedgen/seedgen2/utils/seeds.py) at [seedgen.py:143](../components/seedgen/seedgen2/seedgen.py))
+#### Step 7: Coverage Aggregation ([`get_merged_coverage`](../components/seedgen/seedgen2/utils/seeds.py) at [seedgen.py#L143](../components/seedgen/seedgen2/seedgen.py#L143))
 - Merges all `.profdata` files from all 300 seeds (3 scripts × 100 seeds each)
 - Uses `llvm-profdata merge` for aggregation
 - Calculates final coverage percentages
 - Generates comprehensive coverage report
+
+#### Sowbot vs Plainbot
+
+Full Mode uses two distinct LangGraph-based workflows for different purposes:
+
+##### **Sowbot** - Script Generation with Validation ([sowbot.py#L214-290](../components/seedgen/seedgen2/graphs/sowbot.py#L214))
+**Purpose**: Generate, validate, and execute Python generator scripts
+
+**Graph Structure** (with error handling and retry):
+```python
+graph_builder.add_edge(START, "generate")
+graph_builder.add_edge("generate", "validate_script")
+graph_builder.add_conditional_edges("validate_script", 
+    EDGE_error_happened,
+    {True: "handle_error", False: END})
+graph_builder.add_edge("handle_error", "validate_script")  # Retry on error
+```
+
+**Key Features**:
+- Generates Python scripts that create seeds
+- Validates script syntax before execution
+- Executes script to generate 100 seeds per iteration
+- Measures coverage using getcov tool
+- Implements retry logic (up to 5 attempts) on errors
+- Returns `SowbotResult` with script, seeds, and coverage feedback
+
+**Usage in Pipeline**:
+- Step 2: Initial script generation ([`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py#L12))
+- Step 4: Filetype-based script replacement ([`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py#L28))
+- Step 6: Final script alignment ([`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py#L11))
+
+##### **Plainbot** - Simple Text Generation ([plainbot.py#L41-75](../components/seedgen/seedgen2/graphs/plainbot.py#L41))
+**Purpose**: Generate plain text responses for documentation and analysis
+
+**Graph Structure** (simple linear flow):
+```python
+graph_builder.add_edge(START, 'node_prompt')
+graph_builder.add_edge('node_prompt', END)
+```
+
+**Key Features**:
+- No validation or execution logic
+- No error handling or retry mechanism
+- Simply invokes LLM and returns text response
+- Used for non-executable content generation
+
+**Usage in Pipeline**:
+- Step 3: Documentation generation ([`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L26))
+- Step 4: Filetype identification ([`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py#L11))
+- Step 5: Documentation improvement ([`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L43))
+
+**Key Difference**: Sowbot generates and validates executable code with coverage feedback, while Plainbot generates text/documentation without execution.
 
 ### 4. Parallel Processing Architecture
 
@@ -469,8 +521,8 @@ getcov --hybrid -- /out/harness_binary seed_file
 
 ## Implementation References
 
-- Main orchestrator: [`run_full_mode()`](../components/seedgen/infra/aixcc.py:595-751)
-- Agent implementation: [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py:35-149)
+- Main orchestrator: [`run_full_mode()`](../components/seedgen/infra/aixcc.py#L595-751)
+- Agent implementation: [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py#L35-149)
 - SeedD daemon: [`/components/seedgen/seedd/`](../components/seedgen/seedd/)
 - Coverage tool: [`/components/seedgen/getcov/`](../components/seedgen/getcov/)
 - Instrumentation tools: [`/components/seedgen/prebuilt/`](../components/seedgen/prebuilt/)

@@ -7,6 +7,29 @@ The seedgen component is an LLM-powered seed generation system that creates init
 - Processes tasks in parallel using multiple generative models (GPT-4.1, Claude-4-sonnet, O4-mini)
 - Orchestrates seed generation strategies based on environment variables
 
+## Key Design Choice: One-Time Generation Strategy
+
+**🔑 N.B. Seedgen operates as a ONE-TIME generation at task arrival, NOT continuous generation based on coverage feedback.**
+
+All four modes (Full, Mini, MCP, Codex) follow this same pattern ([task_handler.py#L143-207](../components/seedgen/task_handler.py#L143)):
+- Seeds are generated **once** when a new task arrives from the queue
+- No feedback loop from fuzzing back to seedgen
+- Fuzzing takes these initial seeds and mutates them independently
+- Multiple LLM models run in parallel for the same task, but each runs only once
+
+```text
+Task Arrival → Seedgen (once) → Initial Seeds → Fuzzing (continuous mutation) → Bug Discovery
+     ↓              ↓                  ↓                    ↓
+  Queue msg    3 models × N        cmin_queue         Fuzzers mutate
+              seeds per harness                      independently
+```
+
+This design choice prioritizes:
+- **Scalability**: No continuous LLM calls during fuzzing
+- **Cost efficiency**: Limited LLM API usage per task
+- **Speed**: Fuzzing can proceed immediately with initial seeds
+- **Simplicity**: No complex feedback mechanisms between components
+
 ## Overall Workflow
 
 ```mermaid
@@ -108,13 +131,13 @@ graph TB
 
 The seedgen component follows a multi-layered parallel processing workflow with three levels of parallelism:
 
-- **Task Reception and Distribution**: [`task_handler.py:384-557`](../components/seedgen/task_handler.py:384)
-- **Archive Extraction**: [`task_handler.py:78-94`](../components/seedgen/task_handler.py:78)
-- **Diff Application**: [`task_handler.py:97-122`](../components/seedgen/task_handler.py:97)
-- **Parallel Model Processing**: [`task_handler.py:464-490`](../components/seedgen/task_handler.py:464)
-- **Strategy Selection and Execution**: [`task_handler.py:143-207`](../components/seedgen/task_handler.py:143)
-- **Result Storage and Distribution**: [`task_handler.py:246-290`](../components/seedgen/task_handler.py:246)
-- **Error Handling and Retry Logic**: [`task_handler.py:494-527`](../components/seedgen/task_handler.py:494)
+- **Task Reception and Distribution**: [`task_handler.py#L384-557`](../components/seedgen/task_handler.py#L384)
+- **Archive Extraction**: [`task_handler.py#L78-94`](../components/seedgen/task_handler.py#L78)
+- **Diff Application**: [`task_handler.py#L97-122`](../components/seedgen/task_handler.py#L97)
+- **Parallel Model Processing**: [`task_handler.py#L464-490`](../components/seedgen/task_handler.py#L464)
+- **Strategy Selection and Execution**: [`task_handler.py#L143-207`](../components/seedgen/task_handler.py#L143)
+- **Result Storage and Distribution**: [`task_handler.py#L246-290`](../components/seedgen/task_handler.py#L246)
+- **Error Handling and Retry Logic**: [`task_handler.py#L494-527`](../components/seedgen/task_handler.py#L494)
 
 ### Key Infrastructure Components
 
@@ -122,19 +145,19 @@ The infrastructure components provide the underlying technical capabilities that
 
 **1. SeedD Service** ([`components/seedgen/seedd/`](../components/seedgen/seedd/)):
 - **Purpose**: Go-based gRPC daemon that powers the Full Mode strategy's dynamic analysis capabilities
-- **Integration**: Started via Docker container at [`aixcc.py:654-697`](../components/seedgen/infra/aixcc.py:654)
+- **Integration**: Started via Docker container at [`aixcc.py#L654-697`](../components/seedgen/infra/aixcc.py#L654)
 - **Workflow Connection**: Enables the "Dynamic analysis" feature shown in the Full Mode box of the workflow
 - **Usage**: Each harness (H1, H2, HN) in Full Mode communicates with this daemon via gRPC for coverage collection and function enumeration
 - **Scope**: Only used by Full Mode; not needed for Mini, MCP, or Codex modes
 
-**2. Compilation Tools** (deployed at [`aixcc.py:151-159`](../components/seedgen/infra/aixcc.py:151)):
+**2. Compilation Tools** (deployed at [`aixcc.py#L151-159`](../components/seedgen/infra/aixcc.py#L151)):
 - **Purpose**: Custom instrumentation toolchain that enables Full Mode's code analysis
 - **Components**:
   - `clang-argus/clang-argus++`: Instrumented compiler wrappers replacing standard compilers
   - `bandld`: Custom linker for binary instrumentation
   - `libcallgraph_rt.a`: Runtime library for call graph generation
   - `SeedMindCFPass.so`: LLVM pass for control flow instrumentation
-- **Integration**: Deployed via [`compile_project()`](../components/seedgen/infra/aixcc.py:151) before Full Mode execution
+- **Integration**: Deployed via [`compile_project()`](../components/seedgen/infra/aixcc.py#L151) before Full Mode execution
 - **Workflow Connection**: Provides the "Instrumentation" capability mentioned in the Full Mode box
 - **Prerequisite**: Must instrument the code before SeedD can perform dynamic analysis
 
