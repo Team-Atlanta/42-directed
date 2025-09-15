@@ -24,12 +24,6 @@ Task Arrival → Seedgen (once) → Initial Seeds → Fuzzing (continuous mutati
               seeds per harness                      independently
 ```
 
-This design choice prioritizes:
-- **Scalability**: No continuous LLM calls during fuzzing
-- **Cost efficiency**: Limited LLM API usage per task
-- **Speed**: Fuzzing can proceed immediately with initial seeds
-- **Simplicity**: No complex feedback mechanisms between components
-
 ## Overall Workflow
 
 ```mermaid
