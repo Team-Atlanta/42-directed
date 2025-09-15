@@ -9,7 +9,7 @@ As a code agent, you will work with me together by checking the implementation t
 
 # Markdown Guideline
 
-After we understanding one point, you should summarize it and record it into some files under `notes` directory when I asked. Note that:
+After we completing the discussion on one question, I'll ask you to summarize the discussion and record them in some files under `notes` directory. Note that:
 
 - Summarize the understanding with only necessary information, with both high-level and low-level
 - No duplicate or redundant description, no overclaim, no exaggeration, keep the markdown well organized and the description simple and accurate
