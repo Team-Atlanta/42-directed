@@ -162,85 +162,21 @@ The infrastructure components provide the underlying technical capabilities that
 
 ## Four Key Seed Generation Strategies
 
-1. **Full Mode** ([`run_full_mode`](../components/seedgen/infra/aixcc.py:595) in lines 595-751)
-   - Uses [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py:35) class
-   - **Does NOT support Java/JVM projects** (lines 606-610: early return for Java)
-   - Requires compilation of the project with instrumentation
-   - Runs SeedD daemon (Go service) in Docker container for dynamic analysis
-   - Collects coverage information and function call graphs
-   - Most comprehensive but resource-intensive
+| Mode | Agent Class | Language Support | Compilation Required | Key Features | Coverage Feedback | Script Evolution | Infrastructure | Corpus Minimization | Deployment Status |
+|------|------------|-----------------|---------------------|--------------|-------------------|------------------|----------------|-------------------|------------------|
+| **[Full](./seedgen-fullmode.md)** | [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py#L35) | C/C++ only | Yes (instrumented) | • Binary instrumentation with LLVM<br>• SeedD daemon for dynamic analysis<br>• Function call graph collection | Yes (via SeedD) | 3 iterations with refinement | Complex (SeedD, getcov, LLVM) | Always for C/C++ | Active |
+| **[Mini](./seedgen-minimode.md)** | [`SeedMiniAgent`](../components/seedgen/seedgen2/seedmini.py#L20) | All languages | No | • Lightweight harness-only analysis<br>• Docker-based seed execution<br>• Fastest execution time | No | Single generation | Simple (Docker only) | C/C++ only, skip for Java | Active (default) |
+| **[MCP](./seedgen-mcpmode.md)** | [`SeedMcpAgent`](../components/seedgen/seedgen2/seedmcp.py#L148) | All languages | No | • Tree-sitter AST analysis<br>• MCP filesystem access<br>• Direct bug triage submission | No (static only) | Single-pass with MCP context | MCP servers (Node.js/Python) | None (direct to triage) | **Enabled** ([`ENABLE_MCP=1`](../deployment.yaml#L64)) |
+| **Codex** | [`SeedCodexAgent`](../components/seedgen/seedgen2/seedcodex.py#L16) | All languages | No | • Codexbot graph analysis<br>• Harness + codebase context<br>• Skips Claude models | No | Single generation | Codexbot graph | C/C++ only, skip for Java | **Unused** (needs `ENABLE_CODEX=1`) |
 
-2. **Mini Mode** ([`run_mini_mode`](../components/seedgen/infra/aixcc.py:340) in lines 340-459)
-   - Uses [`SeedMiniAgent`](../components/seedgen/seedgen2/seedmini.py:20) class
-   - **Supports Java/JVM projects**
-   - Lightweight approach using only harness source code
-   - No compilation or dynamic analysis required
-   - Faster but less context-aware
-   - Java projects skip corpus minimization ([`send_to_cmin=not is_java`](../components/seedgen/infra/aixcc.py:415))
+### Implementation Entry Points
+- **Full Mode**: [`run_full_mode`](../components/seedgen/infra/aixcc.py#L595) (lines 595-751)
+- **Mini Mode**: [`run_mini_mode`](../components/seedgen/infra/aixcc.py#L340) (lines 340-459)  
+- **MCP Mode**: [`run_mcp_mode`](../components/seedgen/infra/aixcc.py#L461) (lines 461-593)
+- **Codex Mode**: [`run_codex_mode`](../components/seedgen/infra/aixcc.py#L754) (lines 754-876)
 
-3. **MCP Mode** ([`run_mcp_mode`](../components/seedgen/infra/aixcc.py:461) in lines 461-593)
-   - Uses [`SeedMcpAgent`](../components/seedgen/seedgen2/seedmcp.py:148) class
-   - **Supports Java/JVM projects**
-   - Integrates Model Context Protocol for enhanced code understanding
-   - Uses filesystem and tree-sitter servers for code analysis
-   - Seeds can be directly sent to triage as potential bugs
-   - **Currently enabled** in deployment ([`ENABLE_MCP=1`](../deployment.yaml:64))
-
-4. **Codex Mode** ([`run_codex_mode`](../components/seedgen/infra/aixcc.py:754) in lines 754-876) **[UNUSED]**
-   - Uses [`SeedCodexAgent`](../components/seedgen/seedgen2/seedcodex.py:16) class
-   - **Supports Java/JVM projects**
-   - Alternative to MCP mode, analyzes harness and codebase together
-   - Uses Codexbot graph for seed generation
-   - **Not enabled** in current deployment (would require `ENABLE_CODEX=1`)
-   - Mutually exclusive with MCP mode (see [`task_handler.py:173-207`](../components/seedgen/task_handler.py:173))
-   - Skips Claude models ([line 766](../components/seedgen/infra/aixcc.py:766): `if "claude" in gen_model: return`)
-   - Java projects skip corpus minimization ([`send_to_cmin=not is_java`](../components/seedgen/infra/aixcc.py:834))
-
-### Mode Comparison Summary
-
-| Mode | Language Support | Compilation Required | Coverage Feedback | Script Evolution | Execution Time | Infrastructure | Corpus Minimization |
-|------|-----------------|---------------------|-------------------|------------------|----------------|---------------|-------------------|
-| **Full** | C/C++ only | Yes (instrumented) | Yes (via SeedD) | 3 iterations with refinement | Slower | Complex (SeedD, getcov, LLVM) | Always for C/C++ |
-| **Mini** | All languages | No | No | Single generation | Faster | Simple (Docker only) | C/C++ only, skip for Java |
-| **MCP** | All languages | No | No (static only) | Single-pass with MCP context | Medium | MCP servers (Node.js/Python) | None (direct to triage) |
-| **Codex** | All languages | No |  |  |  |  | C/C++ only, skip for Java |
-
-
-### 1. Full Mode
-
-**For comprehensive technical details, see [Full Mode Deep Dive](./seedgen-fullmode.md)**
-
-Full Mode uses compiler instrumentation and dynamic analysis for C/C++ projects. Key highlights:
-- Binary instrumentation with custom LLVM passes
-- gRPC-based SeedD daemon for dynamic analysis  
-- Coverage-guided iterative refinement
-- Real-time execution and feedback
-
-See the [detailed documentation](./seedgen-fullmode.md) for the complete method-level workflow, architecture diagrams, and implementation specifics.
-
-### 2. Mini Mode
-
-**For comprehensive technical details, see [Mini Mode Deep Dive](./seedgen-minimode.md)**
-
-Mini Mode uses static harness analysis without compilation for all programming languages. Key highlights:
-- No compilation or instrumentation required
-- Supports Java/JVM projects
-- Single-pass script generation
-- Docker-based seed execution
-
-See the [detailed documentation](./seedgen-minimode.md) for the complete workflow, architecture diagrams, and implementation specifics.
-
-### 3. MCP Mode
-
-**For comprehensive technical details, see [MCP Mode Deep Dive](./seedgen-mcpmode.md)**
-
-MCP Mode uses Model Context Protocol servers for deep code analysis without compilation. Key highlights:
-- AST-based analysis via Tree-sitter
-- Direct filesystem access through MCP servers
-- Backdoor and vulnerability detection
-- Direct bug triage submission
-- Supports all programming languages
-
-See the [detailed documentation](./seedgen-mcpmode.md) for the complete workflow, architecture diagrams, and implementation specifics.
-
-### 4. Codex Mode (Not used in competition)
+### Mode Selection Logic
+- Strategy selection: [`task_handler.py#L173-207`](../components/seedgen/task_handler.py#L173)
+- MCP and Codex are mutually exclusive
+- Java projects: Skip Full Mode ([`aixcc.py#L606-610`](../components/seedgen/infra/aixcc.py#L606))
+- Corpus minimization: Java projects skip in Mini/Codex modes ([`aixcc.py#L415`](../components/seedgen/infra/aixcc.py#L415), [`aixcc.py#L834`](../components/seedgen/infra/aixcc.py#L834))

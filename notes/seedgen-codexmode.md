@@ -75,100 +75,137 @@ graph TB
     subgraph S4["STAGE 4: SEEDCODEXAGENT PIPELINE - AUTONOMOUS CODEBASE ANALYSIS (Per Harness)"]
         direction TB
         
-        STEP1["Step 1: Prompt Construction<br/>(seedcodex.py:46-60)"]
-        STEP2["Step 2: Codexbot Initialization<br/>(seedcodex.py:62-63)"]
-        STEP3["Step 3: Codex CLI Invocation<br/>(codexbot.py:271-300)"]
-        STEP4["Step 4: Autonomous Code Analysis<br/>(External Process)"]
-        STEP5["Step 5: Script Generation & Validation<br/>(codexbot.py:227-246)"]
-        STEP6["Step 6: Result Processing<br/>(codexbot.py:301-335)"]
-        
-        subgraph "Step 1 Details"
-            subgraph "Prompt Components"
-                P1["Harness source code"]
-                P2["Codebase location"]
-                P3["Analysis instructions:<br/>• Understand harness/codebase interaction<br/>• Identify test case structure<br/>• Analyze headers, fields, formats<br/>• File type requirements"]
-                P4["Generation requirements:<br/>• Create Python generator script<br/>• Maximize code coverage<br/>• Security-focused test cases<br/>• Edge cases and vulnerabilities"]
-                P5["Autonomy rules:<br/>• Work independently<br/>• Register tree-sitter first<br/>• Token limit awareness"]
-            end
+        %% Step 1: Prompt Construction
+        subgraph STEP1["Step 1: Prompt Construction (seedcodex.py:46-60)"]
+            P1["Harness source code"]
+            P2["Codebase location"]
+            P3["Analysis instructions:<br/>• Understand harness/codebase interaction<br/>• Identify test case structure<br/>• Analyze headers, fields, formats<br/>• File type requirements"]
+            P4["Generation requirements:<br/>• Create Python generator script<br/>• Maximize code coverage<br/>• Security-focused test cases<br/>• Edge cases and vulnerabilities"]
+            P5["Autonomy rules:<br/>• Work independently<br/>• Register tree-sitter first<br/>• Token limit awareness"]
+            
+            P1 --> PROMPT_BUILD["Build Full Prompt"]
+            P2 --> PROMPT_BUILD
+            P3 --> PROMPT_BUILD
+            P4 --> PROMPT_BUILD
+            P5 --> PROMPT_BUILD
         end
         
-        subgraph "Step 2 Details"
+        %% Connector 1
+        OUT_S1["➤ Full Prompt Ready"]
+        
+        %% Step 2: Codexbot Initialization
+        subgraph STEP2["Step 2: Codexbot Initialization (seedcodex.py:62-63)"]
             BOT_CONFIG["Configuration:<br/>• seedd: None (no dynamic analysis)<br/>• harness_binary: name<br/>• target_project_dir: source path<br/>• model: GPT-4.1/O4-mini"]
+            BOT_INIT["Create Codexbot Instance"]
+            
+            BOT_CONFIG --> BOT_INIT
         end
         
-        subgraph "Step 3 Details"
-            subgraph "Ultra-Thinking Mode"
-                ULTRA["ULTRA_THINKING_PROMPT<br/>(codexbot.py:28-34)"]
-                RIGOR["• Greater rigor & detail<br/>• Multi-angle verification<br/>• Challenge assumptions<br/>• Triple-verify everything<br/>• Cross-check with tools<br/>• Systematic weakness search"]
+        %% Connector 2
+        OUT_S2["➤ Codexbot.run() Called"]
+        
+        %% Step 3: Graph Building & Ultra-Thinking
+        subgraph STEP3["Step 3: Graph Build & Prompt Enhancement (codexbot.py:281-287)"]
+            BUILD_GRAPH["build_generate_graph()<br/>Create LangGraph workflow"]
+            ULTRA["Apply ULTRA_THINKING_PROMPT<br/>• Greater rigor & detail<br/>• Multi-angle verification<br/>• Challenge assumptions<br/>• Triple-verify everything"]
+            FULL_PROMPT["Combine:<br/>• Task prompt<br/>• Requirements<br/>• One-shot example<br/>• Ultra-thinking wrapper"]
+            
+            BUILD_GRAPH --> FULL_PROMPT
+            ULTRA --> FULL_PROMPT
+        end
+        
+        %% Connector 3
+        OUT_S3["➤ Invoke Graph with State"]
+        
+        %% Step 4: Generation Node & Codex CLI
+        subgraph STEP4["Step 4: GenerationNode - Codex CLI Execution (codexbot.py:149-161)"]
+            NODE_GEN["GenerationNode Called"]
+            CODEX_INVOKE["codex_invoke()<br/>(codexbot.py:102-123)"]
+            CODEX_CMD["subprocess.run('codex')<br/>• -q: Quiet mode<br/>• --approval-mode full-auto<br/>• --model: LLM model<br/>• Working dir: project root"]
+            
+            subgraph "Autonomous Analysis"
+                CAP["Available Capabilities:<br/>• Tree-sitter AST parsing<br/>• File system navigation<br/>• Code relationship analysis<br/>• Pattern recognition"]
+                ACT["Analysis Activities:<br/>• Study harness implementation<br/>• Trace function calls<br/>• Identify input constraints<br/>• Find edge cases"]
             end
             
-            subgraph "Codex CLI Execution"
-                CODEX_CMD["subprocess.run('codex')<br/>(codexbot.py:108-119)"]
-                
-                CMD_ARGS["Arguments:<br/>• -q: Quiet mode<br/>• --approval-mode full-auto<br/>• --model: LLM model<br/>• Prompt with task"]
-                
-                ENV_VARS["Environment:<br/>• OPENAI_API_KEY<br/>• OPENAI_BASE_URL<br/>• Working dir: project root"]
-            end
+            CODEX_RESPONSE["Codex Returns:<br/>Python generator script"]
+            
+            NODE_GEN --> CODEX_INVOKE
+            CODEX_INVOKE --> CODEX_CMD
+            CODEX_CMD --> CAP
+            CAP --> ACT
+            ACT --> CODEX_RESPONSE
         end
         
-        subgraph "Step 4 Details"
-            subgraph "Available Capabilities"
-                CAP1["Tree-sitter AST parsing<br/>Register & query code structure"]
-                CAP2["File system navigation<br/>Read source files with token limits"]
-                CAP3["Code relationship analysis<br/>Understand dependencies"]
-                CAP4["Pattern recognition<br/>Identify file formats & protocols"]
+        %% Connector 4
+        OUT_S4["➤ Script Response"]
+        
+        %% Step 5: Script Validation & Seed Generation
+        subgraph STEP5["Step 5: ScriptValidationNode (codexbot.py:164-199)"]
+            NODE_VAL["ScriptValidationNode Called"]
+            EXTRACT["Extract Python script<br/>From triple backticks"]
+            CREATE_GEN["Create Generator<br/>store.new_generator(script)"]
+            RUN_GEN["Run Generator<br/>Generate 400 seeds"]
+            
+            subgraph "Error Handling"
+                CHECK_ERROR["Check for Errors"]
+                NODE_ERR["ErrorHandlingNode<br/>Fix generation errors<br/>Max 5 retries"]
             end
             
-            subgraph "Analysis Activities"
-                ACT1["Study harness implementation"]
-                ACT2["Trace function calls in codebase"]
-                ACT3["Identify input constraints"]
-                ACT4["Discover file format specs"]
-                ACT5["Find edge cases & boundaries"]
-            end
+            NODE_VAL --> EXTRACT
+            EXTRACT --> CREATE_GEN
+            CREATE_GEN --> RUN_GEN
+            RUN_GEN --> CHECK_ERROR
+            CHECK_ERROR -->|error| NODE_ERR
+            NODE_ERR -->|retry| NODE_VAL
+            CHECK_ERROR -->|success| GEN_SUCCESS["Generation Success"]
         end
         
-        subgraph "Step 5 Details"
-            subgraph "Graph Nodes"
-                NODE_GEN["GenerationNode<br/>Initial script creation"]
-                NODE_VAL["ScriptValidationNode<br/>Extract & validate Python"]
-                NODE_ERR["ErrorHandlingNode<br/>Fix generation errors"]
-            end
-            
-            subgraph "Validation Process"
-                EXTRACT["Extract Python script<br/>From triple backticks"]
-                VALIDATE["Validate syntax<br/>Try script execution"]
-                GEN_SEEDS["Generate 400 seeds<br/>(num_seeds=400)"]
-                RETRY["Retry on error<br/>Max 5 attempts"]
-            end
-        end
+        %% Connector 5
+        OUT_S5["➤ 400 Seeds Generated"]
         
-        SCRIPT_FINAL["📄 Final Generator Script<br/>400 seeds generated<br/>No coverage measurement"]
-        
-        subgraph "Step 6 Details"
+        %% Step 6: Result Processing
+        subgraph STEP6["Step 6: Result Processing (codexbot.py:301-335)"]
+            COLLECT_RESULTS["Collect Results:<br/>• Generator ID<br/>• Generator script<br/>• Seed paths"]
             NO_COVERAGE["No Coverage Analysis<br/>seedd=None, skip evaluation<br/>Empty SeedFeedback"]
-            
             TRACKER["Track Generation<br/>Log prompt, script, metadata"]
+            RETURN_RESULT["Return CodexbotResult"]
+            
+            COLLECT_RESULTS --> NO_COVERAGE
+            NO_COVERAGE --> TRACKER
+            TRACKER --> RETURN_RESULT
         end
         
-        %% Main flow connections (step to step)
-        STEP1 -.-> STEP2
-        STEP2 -.-> STEP3
-        STEP3 -.-> STEP4
-        STEP4 -.-> STEP5
-        STEP5 -.-> SCRIPT_FINAL
-        SCRIPT_FINAL -.-> STEP6
+        %% Final output
+        SCRIPT_FINAL["📄 Final Output<br/>• Generator Script<br/>• 400 Seeds<br/>• No Coverage Metrics"]
+        
+        %% Connect all steps through connectors
+        PROMPT_BUILD --> OUT_S1
+        OUT_S1 --> BOT_INIT
+        BOT_INIT --> OUT_S2
+        OUT_S2 --> BUILD_GRAPH
+        FULL_PROMPT --> OUT_S3
+        OUT_S3 --> NODE_GEN
+        CODEX_RESPONSE --> OUT_S4
+        OUT_S4 --> NODE_VAL
+        GEN_SUCCESS --> OUT_S5
+        OUT_S5 --> COLLECT_RESULTS
+        RETURN_RESULT --> SCRIPT_FINAL
         
         %% Styling for clarity
         style SCRIPT_FINAL fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
-        style ULTRA fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+        style OUT_S1 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+        style OUT_S2 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+        style OUT_S3 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+        style OUT_S4 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
+        style OUT_S5 fill:#fff3e0,stroke:#ff9800,stroke-width:2px
         style NO_COVERAGE fill:#ffebee,stroke:#f44336,stroke-width:2px
-        style STEP1 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-        style STEP2 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-        style STEP3 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-        style STEP4 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-        style STEP5 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-        style STEP6 fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+        style STEP1 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+        style STEP2 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+        style STEP3 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+        style STEP4 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+        style STEP5 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+        style STEP6 fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
     end
 
     OUT4["OUTPUT → STAGE 5<br/>━━━━━━━━━━━━━━━━━━━━━━━━━━━━<br/>• Generated seeds (400 per harness)<br/>• Generator Python scripts<br/>• No coverage metrics"]
