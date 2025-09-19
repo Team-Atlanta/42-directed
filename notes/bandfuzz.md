@@ -4,12 +4,16 @@
 
 BandFuzz is a collaborative fuzzing framework designed for large-scale parallel fuzzing campaigns, originally developed at Northwestern University. It uses reinforcement learning to dynamically schedule fuzzing strategies for adaptive and efficient fuzzing of real-world targets.
 
-## Key Features from Paper
+## Key Features from Paper vs. AIxCC Implementation
 
+### Academic Paper Claims
 - **Collaborative Fuzzing**: Multiple fuzzer instances work together sharing seeds and discoveries
-- **Reinforcement Learning**: Dynamic scheduling of fuzzing strategies using RL algorithms
+- **Reinforcement Learning**: Dynamic scheduling using multi-armed bandits with Thompson Sampling
 - **Large-scale Support**: Designed for real-world targets including Google OSS-Fuzz
 - **Adaptive Strategy Selection**: Intelligently coordinates the use of multiple fuzzers
+
+### AIxCC Implementation Reality
+**Note**: The current AIxCC implementation does **NOT** include the sophisticated RL/multi-armed bandit algorithm described in the academic paper. Instead, it uses a simplified factor-based scheduling system with static weights and basic heuristics. The Thompson Sampling, Beta distributions, reward learning, and bandit parameter updates are absent from this codebase.
 
 ## Implementation Architecture
 
