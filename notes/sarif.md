@@ -104,6 +104,8 @@ The SARIF component employs two active validation strategies based on project ty
 - Dependent on external services that might not be consistently available
 - Part of experimental features that were later streamlined
 
+4. **Code Injector**: A sophisticated Clang-based tool for injecting target-reach logging was developed [code_injector.cpp](../components/sarif/src/code_injector/code_injector.cpp) but is completely unused - built in Docker but never called
+
 ### AI-Powered Analysis
 
 #### System Architecture
@@ -188,6 +190,16 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
   - Maps line numbers to function names for SARIF location resolution
   - Addresses the "TODO" from README about better function name extraction
 
+### Code Injector (Unused)
+- **Implementation**: [code_injector/code_injector.cpp](../components/sarif/src/code_injector/code_injector.cpp)
+- **Purpose**: Clang-based tool for injecting target-reach logging into C/C++ code
+- **Functionality**:
+  - Injects assembly code `AIXCC_REACH_TARGET_<id>` at specified line numbers
+  - Uses direct syscalls to write to stderr for minimal overhead
+  - Built as standalone executable via CMake [CMakeLists.txt](../components/sarif/src/code_injector/CMakeLists.txt)
+- **Status**: **Completely commented out** in SeedsChecker [seeds.py#L70-L114](../components/sarif/src/checkers/seeds.py#L70-L114)
+- **Docker Build**: Built during container creation but never used [Dockerfile#L32-L37](../components/sarif/Dockerfile#L32-L37)
+
 ### Containerized Testing Infrastructure
 - **Docker Compose Setup**: [docker-compose.yml#L1-L148](../components/sarif/docker-compose.yml#L1-L148)
   - **RabbitMQ**: Message queue coordination (port 23333 for management)
@@ -196,6 +208,103 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
   - **Seed Minimizer**: Crash data processing service
   - **Slice Service**: Code slicing operations
   - **Directed Fuzzing**: Advanced empirical validation engine
+
+## Message Queue Communication
+
+### Incoming Messages (Active)
+
+**Primary Consumer**: `CRS_QUEUE` - [daemon.py#L32](../components/sarif/src/daemon.py#L32)
+- **Source**: CRS orchestration system
+- **Handler**: [daemon.py#L42-L131](../components/sarif/src/daemon.py#L42-L131)
+- **Message Structure**: [daemon.py#L52-L63](../components/sarif/src/daemon.py#L52-L63)
+```json
+{
+  "task_id": "string",          // Challenge/task identifier
+  "sarif_id": "string",         // Unique SARIF report ID
+  "project_name": "string",     // Target project name
+  "focus": "string",            // Primary repo to analyze
+  "repo": ["array"],            // List of repository archive paths
+  "task_type": "string",        // "delta" or normal mode
+  "diff": "string",             // Delta changes (optional)
+  "sarif_report": "string",     // SARIF JSON content
+  "fuzzing_tooling": "string"   // Fuzzing infrastructure archive path
+}
+```
+
+### Outgoing Messages (Unused - Commented Out)
+
+**1. Slice Service Communication**
+- **Queue**: `SARIF_TO_SLICE_QUEUE` - [slice.py#L66](../components/sarif/src/checkers/slice.py#L66)
+- **Message Structure**: [slice.py#L54-L64](../components/sarif/src/checkers/slice.py#L54-L64)
+```json
+{
+  "is_sarif": true,
+  "slice_id": "string",         // SARIF ID for tracking
+  "slice_target": [             // Functions to slice with MD5 hashes
+    ["file_hash", "function_name"],
+    ...
+  ],
+  "task_id": "string",
+  "project_name": "string",
+  "focus": "string",
+  "repo": ["array"],
+  "fuzzing_tooling": "string",
+  "diff": "string"              // Optional
+}
+```
+
+**2. Directed Fuzzing Communication**
+- **Queue 1**: `SLICE_TASK_QUEUE` - [directed_fuzzing.py#L64](../components/sarif/src/checkers/directed_fuzzing.py#L64) (for slice generation)
+- **Queue 2**: `CRS_DF_QUEUE` - [directed_fuzzing.py#L115](../components/sarif/src/checkers/directed_fuzzing.py#L115) (for fuzzing tasks)
+- **DF Message**: [directed_fuzzing.py#L102-L111](../components/sarif/src/checkers/directed_fuzzing.py#L102-L111)
+```json
+{
+  "task_id": "string",
+  "task_type": "delta|xxy",     // Note: "xxy" for non-delta mode
+  "project_name": "string",
+  "focus": "string",
+  "repo": ["array"],
+  "fuzzing_tooling": "string",
+  "diff": "string",             // Optional
+  "sarif_slice_path": "string"  // Path to generated slice
+}
+```
+
+### Database Operations (Active Output)
+
+**Primary Output**: PostgreSQL Database - [tasks.py#L57-L76](../components/sarif/src/tasks.py#L57-L76)
+- **Table**: `SarifResults`
+- **Operation**: Direct database writes for validation results
+- **Fields**: `sarif_id`, `result` (boolean), `task_id`, `description`
+- **Database Access**: [db.py#L13-L17](../components/sarif/src/db.py#L13-L17)
+
+### Message Queue Infrastructure
+
+**Queue Management**: [msg.py#L8-L77](../components/sarif/src/msg.py#L8-L77)
+- **Connection**: RabbitMQ via `pika` library with URL-based connection
+- **Threading Support**: Threaded message consumption [msg.py#L71-L76](../components/sarif/src/msg.py#L71-L76)
+- **Error Handling**: Automatic NACK on processing failures [msg.py#L57](../components/sarif/src/msg.py#L57)
+- **Acknowledgment**: Manual ACK after successful processing [msg.py#L60](../components/sarif/src/msg.py#L60)
+- **Quality of Service**: Prefetch count of 1 for load balancing [msg.py#L73](../components/sarif/src/msg.py#L73)
+
+### Communication Patterns
+
+**Active Flow (Current Implementation)**:
+```
+CRS System → [CRS_QUEUE] → SARIF Agent → PostgreSQL Database
+```
+
+**Planned Flow (Commented Out)**:
+```
+SARIF Agent → [SARIF_TO_SLICE_QUEUE] → Slice Service → Database
+SARIF Agent → [SLICE_TASK_QUEUE] → Directed Fuzzing Service
+SARIF Agent → [CRS_DF_QUEUE] → Directed Fuzzing Service
+```
+
+**Database Polling (Unused Checkers)**:
+- SliceChecker would poll `SarifSlice` table for results
+- DirectedFuzzingChecker would poll `DirectedSlice` table for results
+- SeedsChecker polls `BugProfiles` table for crash reports (active)
 
 ## Key Design Decisions
 
