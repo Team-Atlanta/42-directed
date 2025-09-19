@@ -1,0 +1,30 @@
+[book]
+authors = ["Yu-Fu Fu"]
+language = "en"
+src = "src"
+title = "CRS Study Notes"
+description = "Study notes for the 42-b3yond-6ug team's CRS implementation used in DARPA AIxCC"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/Team-Atlanta/42-afc-crs"
+edit-url-template = "https://github.com/Team-Atlanta/42-afc-crs/edit/main/notes/{path}"
+additional-js = ["js/mermaid.min.js", "js/mermaid-init.js"]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+
+[preprocessor.links]
+# This allows you to use {{#repo:path/to/file.py}} in markdown
+# which will be replaced with the full GitHub URL
+
+[output.html.search]
+enable = true
+
+[output.html.print]
+enable = true
