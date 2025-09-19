@@ -6,7 +6,7 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 
 ## Architecture
 
-### Two-Tier System
+### Two-Tier Validation System
 
 #### 1. SARIF Agent (Main Service)
 - **Location**: [src/app.py](../components/sarif/src/app.py)
@@ -47,15 +47,18 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 
 ### Validation Strategies
 
-#### Java Project Validation
+The SARIF component employs two active validation strategies based on project type:
+
+#### 1. Java Project Validation (Direct AI Analysis)
 - **Logic**: [tasks.py#L88-L144](../components/sarif/src/tasks.py#L88-L144)
 - **Method**: Direct AI evaluation using LLM analysis
 - **Models**: OpenAI or Anthropic (configurable)
-- **Retries**: Up to 20 attempts for reliable results
+- **Retries**: Up to 20 attempts for reliable results (fault tolerance design)
 - **Result Processing**: Extracts `assessment` field from JSON response
 
-#### C/C++ Project Validation (Seeds Checker)
+#### 2. C/C++ Project Validation (Seeds Checker)
 - **Implementation**: [checkers/seeds.py](../components/sarif/src/checkers/seeds.py)
+- **Logic**: [tasks.py#L157-L160](../components/sarif/src/tasks.py#L157-L160)
 - **Multi-Stage Process**:
 
   1. **Preliminary AI Check**: [seeds.py#L124-L170](../components/sarif/src/checkers/seeds.py#L124-L170)
@@ -68,6 +71,38 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
      - Correlates crashes with SARIF findings
      - Uses AI to analyze crash reports against SARIF claims
      - Polls every 2 minutes for new crashes
+
+### Unused/Commented-Out Validation Strategies
+
+**Note**: The following validation strategies exist as implemented classes but are **completely commented out** in the main workflow [tasks.py#L147-L156](../components/sarif/src/tasks.py#L147-L156):
+
+#### Slice-Based Validation (Inactive)
+- **Implementation**: [checkers/slice.py](../components/sarif/src/checkers/slice.py)
+- **Purpose**: Code slicing-based validation creating minimal code slices containing SARIF-reported functions
+- **Process**: Would extract functions, send slicing requests via `SARIF_TO_SLICE_QUEUE`, and validate if slice contains `LLVMFuzzerTestOneInput`
+- **Status**: Imported but not used in current implementation
+
+#### Directed Fuzzing Validation (Inactive)
+- **Implementation**: [checkers/directed_fuzzing.py](../components/sarif/src/checkers/directed_fuzzing.py)
+- **Purpose**: Advanced empirical validation using directed fuzzing on code slices
+- **Process**: Would create targeted code slices and send to fuzzing infrastructure via `CRS_DF_QUEUE`
+- **Status**: Imported but not used in current implementation
+
+### Implementation Notes
+
+**Current State**: The SARIF component has evolved from a more complex architecture to a streamlined two-strategy approach. Evidence from the codebase suggests:
+
+1. **Commented-Out Code**: Lines [147-156 in tasks.py](../components/sarif/src/tasks.py#L147-L156) show fully implemented SliceChecker and DirectedFuzzingChecker that are commented out with the note "it just sent a message to the queue, just let it run"
+
+2. **Infrastructure Present**: Docker Compose configuration includes slice and directed fuzzing services, indicating these were previously operational
+
+3. **Simplified Workflow**: Current implementation focuses on the most reliable validation methods - direct AI analysis for Java and crash-correlated analysis for C/C++
+
+**Reason for Simplification**: The commented-out code suggests the additional validation strategies may have been:
+- Computationally expensive
+- Less reliable than the current methods
+- Dependent on external services that might not be consistently available
+- Part of experimental features that were later streamlined
 
 ### AI-Powered Analysis
 
@@ -94,6 +129,10 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 - **Model**: `SarifResults` - Stores validation outcomes
 - **Fields**: `sarif_id`, `result` (boolean), `task_id`, `description`
 
+### Unused Database Models
+- **SarifSlice**: [sarif_slice.py#L5-L11](../components/sarif/src/models/sarif_slice.py#L5-L11) - Would store slice results (unused, for commented-out SliceChecker)
+- **DirectedSlice**: [directed_slice.py#L5-L10](../components/sarif/src/models/directed_slice.py#L5-L10) - Would store directed fuzzing slice results (unused, for commented-out DirectedFuzzingChecker)
+
 ### Crash Data Sources
 - **BugProfiles**: Crash summaries and reports from fuzzing
 - **Task Status**: Monitors processing state for early termination
@@ -102,6 +141,7 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 
 ### Environment Variables
 ```bash
+# Active Configuration
 RABBITMQ_URL          # Message queue connection
 CRS_QUEUE            # Primary task queue name
 DATABASE_URL         # PostgreSQL connection
@@ -109,7 +149,17 @@ AGENT_ROOT           # Root directory for components
 USE_OPENAI           # AI model selection flag
 OPENAI_API_KEY       # OpenAI credentials
 ANTHROPIC_API_KEY    # Anthropic credentials
+
+# Unused Configuration (for commented-out checkers)
+SLICE_TASK_QUEUE     # Would be used by DirectedFuzzingChecker
+SARIF_TO_SLICE_QUEUE # Would be used by SliceChecker
+CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 ```
+
+### Configuration Parameters
+- **Slicing Timeout**: 20 minutes [config.py#L7](../components/sarif/src/config.py#L7)
+- **General Timeout**: 30 minutes [config.py#L8](../components/sarif/src/config.py#L8)
+- **Workspace Directory**: `/tmp/sarif-agent` [config.py#L9](../components/sarif/src/config.py#L9)
 
 ### Deployment Options
 - **Mock Mode**: `--mock` flag enables testing without external dependencies
@@ -122,18 +172,39 @@ ANTHROPIC_API_KEY    # Anthropic credentials
 - **Message Queue**: Receives tasks from broader CRS orchestration
 - **Database**: Shares crash data with fuzzing components
 - **Fuzzing Tooling**: Utilizes OSS-Fuzz infrastructure for validation
+- **Queue Architecture**: Multiple specialized queues coordinate validation workflows
+- **Containerized Services**: Docker Compose orchestrates RabbitMQ, PostgreSQL, Redis, and validation services
 
 ### AI Model Support
 - **OpenAI**: GPT models for code analysis
 - **Anthropic**: Claude models for vulnerability assessment
 - **Configurable**: Runtime model selection based on environment
 
+## Code Analysis Utilities
+
+### Tree-sitter Integration
+- **C Function Extraction**: [c.py#L3-L34](../components/sarif/src/utils/c.py#L3-L34)
+  - Uses tree-sitter for precise C/C++ function parsing
+  - Maps line numbers to function names for SARIF location resolution
+  - Addresses the "TODO" from README about better function name extraction
+
+### Containerized Testing Infrastructure
+- **Docker Compose Setup**: [docker-compose.yml#L1-L148](../components/sarif/docker-compose.yml#L1-L148)
+  - **RabbitMQ**: Message queue coordination (port 23333 for management)
+  - **PostgreSQL**: Database with `b3yond_dev.sql` schema initialization
+  - **Redis**: Caching layer for performance optimization
+  - **Seed Minimizer**: Crash data processing service
+  - **Slice Service**: Code slicing operations
+  - **Directed Fuzzing**: Advanced empirical validation engine
+
 ## Key Design Decisions
 
-### Hybrid Validation Approach
-- **AI + Empirical**: Combines LLM reasoning with crash evidence
+### Dual Validation Approach
+- **Two-Tier System**: Java AI analysis and C/C++ Seeds+Crashes validation
+- **AI + Empirical**: Combines LLM reasoning with crash evidence for C/C++ projects
 - **Language-Specific**: Different strategies for Java vs C/C++
 - **Preliminary Filtering**: Reduces computational cost for obvious false positives
+- **Unused Advanced Features**: Code slicing and directed fuzzing capabilities exist but are commented out
 
 ### Reliability Mechanisms
 - **Retry Logic**: Multiple attempts for AI analysis
