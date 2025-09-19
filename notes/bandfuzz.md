@@ -40,9 +40,17 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
 1. Retrieves available fuzzlets from Redis
 2. Uses factor-based scoring system to prioritize fuzzlets
 3. Currently implements two factors:
-   - **TaskFactor**: Balances load across different tasks (1/number of fuzzlets per task)
-   - **SanitizerFactor**: Prioritizes ASAN (score=5) over UBSAN/MSAN (score=1)
-4. Combines weighted scores and uses probabilistic selection
+   - **TaskFactor**: Balances load across different tasks
+     - Groups fuzzlets by `TaskId`
+     - Assigns score = `1/number_of_fuzzlets_in_same_task`
+     - Ensures fair distribution across tasks regardless of task size
+   - **SanitizerFactor**: Prioritizes different sanitizers
+     - AddressSanitizer (`"address"`): score = 5
+     - UndefinedBehaviorSanitizer (`"undefined"`): score = 1
+     - MemorySanitizer (`"memory"`): score = 1
+     - Default/others: score = 1
+     - Heavily favors ASAN for vulnerability detection
+4. Combines weighted scores (both factors weighted at 1.0) and uses probabilistic selection
 5. Runs fuzzing with configurable timeout intervals
 
 #### AFL++ Integration
