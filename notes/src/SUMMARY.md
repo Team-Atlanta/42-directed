@@ -42,5 +42,8 @@
   - [Submitter](./submitter.md)
   - [Database](./db.md)
 
+## Strategic Analysis
+- [AIxCC Game Strategy](./aixcc-game-strategy.md)
+
 ## Reference Materials
 - [Yu-Fu's Notes](./yufu.md)

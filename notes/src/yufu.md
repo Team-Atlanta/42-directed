@@ -280,7 +280,8 @@ augmentation?
 # Unique/Interesting Practices
 **Q:** Unique/interesting practices (e.g., Theori's logprobs-based classification, no-PoV patch submission)
 
-**A:** _[Your answer here]_
+**A:**
+- Grid search for patch agent parameters (vs. ours  different distinct agents)
 
 
 # Corpus Preparation
@@ -291,3 +292,8 @@ augmentation?
 - All POC seeds from OSS-Fuzz
 - Classified using Magika
 - Fallback: grouping by LLM
+
+
+# TODO:
+- top SARIF score
+- check their blog post & TR
