@@ -29,6 +29,7 @@
   - [Corpus Management](./corpus_grabber.md)
 
 - [Patch Generation](./patch_agent.md)
+  - [PatchAgent Prompts](./patchagent-prompts.md)
 
 - [SARIF Processing](./sarif.md)
 

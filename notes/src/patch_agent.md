@@ -127,10 +127,11 @@ def get_counterexamples(self) -> str:
 ### ✅ **Actual Strengths of AIxCC Implementation**
 
 1. **Production-Quality LSP Integration**: Real clangd/Java language server communication
-2. **Comprehensive Sanitizer Support**: Broader than paper's demonstrated scope
-3. **Multi-Modal Operation**: Both "fast" and "generic" modes for different time constraints
-4. **OSS-Fuzz Integration**: Direct integration with fuzzing infrastructure
-5. **AIxCC System Integration**: Message queue, database, telemetry integration
+2. **Multi-Layered AST Analysis**: Tree-sitter (Java) + Clang AST (C/C++) + LSP integration
+3. **Comprehensive Sanitizer Support**: Broader than paper's demonstrated scope
+4. **Multi-Modal Operation**: Both "fast" and "generic" modes for different time constraints
+5. **OSS-Fuzz Integration**: Direct integration with fuzzing infrastructure
+6. **AIxCC System Integration**: Message queue, database, telemetry integration
 
 ### ❌ **Missing Paper Sophistication**
 
