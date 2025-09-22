@@ -185,6 +185,96 @@ Java fuzzing through Jazzer with security issue detection:
 * FuzzerSecurityIssueHigh: SQL Injection
 ```
 
+### Dictionary Generation System
+
+**Implementation**: [`utils/dict_gen.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/utils/dict_gen.py)
+
+PrimeFuzz includes sophisticated **static dictionary generation** for Java fuzzing, extracting meaningful strings from bytecode to improve fuzzer input quality.
+
+#### Core Architecture
+
+**Invocation**: [`modules/fuzzing_runner.py:1489-1491`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/fuzzing_runner.py#L1489-L1491):
+```python
+gen_dict_java(artifact_path=str(artifact_path),
+              output_dir=str(artifact_path),
+              harnesses=targets)
+```
+
+**Output**: Creates `.dict` files for each harness containing extracted strings for Jazzer fuzzing.
+
+#### Dual String Extraction Strategy
+
+**Method 1: Regex-Based Extraction**:
+```python
+RE_STRINGS = rb'[\x20-\x7E]{3,}'  # Printable ASCII strings, 3+ chars
+for match in re.finditer(RE_STRINGS, class_bytes):
+    s = match.group(0).decode('utf-8', errors='ignore')
+```
+
+**Method 2: JVM Constant Pool Parsing**:
+```python
+if class_bytes[:4] == b'\xCA\xFE\xBA\xBE':  # Magic number check
+    constant_pool_count = struct.unpack('>H', class_bytes[8:10])[0]
+    # Parse CONSTANT_Utf8 entries (tag == 1)
+    if tag == 1:  # CONSTANT_Utf8
+        length = struct.unpack('>H', class_bytes[offset:offset+2])[0]
+        utf8_bytes = class_bytes[offset+2:offset+2+length]
+        s = utf8_bytes.decode('utf-8')
+```
+
+#### Intelligent String Filtering
+
+**Java-Specific Exclusion Rules**:
+- **Package/Class Names**: `java.lang.String`, `org/apache/commons/Foo`
+- **Type Descriptors**: `Ljava/lang/String;`, `[Ljava/net/URL;`
+- **Method Signatures**: `(Ljava/lang/String;I)V`
+- **JVM Internals**: Jazzer-specific keywords and internal patterns
+
+**Priority-Based Selection**:
+```python
+important_keywords = ["aixcc", "jazzer", "zilairese"]
+JAVA_USEFUL_KEYWORDS = [
+    '"../"', '"%20"', '"http"', '"https"', '"file"', '"://"',
+    '"\\xff\\xff"', '"<!"', '"<?xml?>"', '"ENTITY"', '"SYSTEM"', '".zip"'
+]
+```
+
+#### JAR Processing Features
+
+**Selective Processing**:
+- **Skip Jazzer JARs**: `jazzer-`, `jazzer_agent_deploy.jar`
+- **Skip Maven Repository**: Files in `mvn/` or `/m2/` paths
+- **Size Limits**: Skip files larger than 4MB
+- **Timeout Protection**: 30-second timeout per JAR/class file
+
+**Harness-Specific Dictionaries**:
+```python
+for harness in harnesses:
+    harness_strings = extract_strings_from_path(artifact_path, harness)
+    harness_dict_path = os.path.join(output_dir, f"{harness}.dict")
+```
+
+#### Engineering Quality
+
+**Timeout Protection**:
+```python
+@timeout_wrapper(timeout_seconds=30)
+def process_jar_file(file_path):
+@timeout_wrapper(timeout_seconds=60)
+def extract_strings_from_path(target_path: str, harness_name: str = ""):
+```
+
+**Error Resilience**:
+- **Malformed ZIP handling**: Catches `zipfile.BadZipFile`
+- **Unicode handling**: `errors='ignore'` for robust string decoding
+- **Struct unpacking**: Graceful handling of malformed class files
+
+**Strategic Benefits**:
+- ✅ **Zero Runtime Overhead**: Dictionaries pre-generated during build
+- ✅ **Comprehensive Coverage**: Analyzes entire codebase, not just executed paths
+- ✅ **Harness-Specific Optimization**: Tailored dictionaries for each fuzzing target
+- ✅ **Production Integration**: Seamless OSS-Fuzz build process integration
+
 ## Scalability and Resource Management
 
 ### Resource Allocation

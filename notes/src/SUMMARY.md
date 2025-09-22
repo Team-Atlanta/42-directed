@@ -15,6 +15,7 @@
     - [PrimeFuzz](./primefuzz.md)
     - [Prime Build](./prime-build.md)
     - [Directed Fuzzing](./directed.md)
+    - [Directed Fuzzing Approach: AFL++ Allowlist & Jazzer](./directed-fuzzing-approach.md)
   - [Seed Generation](./seedgen.md)
     - [Full Mode Deep Dive](./seedgen-fullmode.md)
     - [Mini Mode Deep Dive](./seedgen-minimode.md)

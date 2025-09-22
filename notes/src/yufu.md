@@ -281,7 +281,12 @@ augmentation?
 **Q:** Unique/interesting practices (e.g., Theori's logprobs-based classification, no-PoV patch submission)
 
 **A:**
-- Grid search for patch agent parameters (vs. ours  different distinct agents)
+- Directed Fuzzing -> Slicing + AFL++ allow list + AFL/SeedGen (vs. traditional
+  directed fuzzer) -> Might like Bullseye (more targeted path but not too
+  focused).
+  Similar for Java, so we need to only implement Java Slicer + Stock Jazzer.
+  Does Jazzer have allowlist instrumentation?
+- Grid search for patch agent parameters (vs. ours 6 different distinct agents)
 
 
 # Corpus Preparation
@@ -293,6 +298,11 @@ augmentation?
 - Classified using Magika
 - Fallback: grouping by LLM
 
+# Questions to authors
+- Why don't you use traditional directed fuzzer (e.g. AFLGo?) Do you evaluate
+  between them and find that slicing + AFL++/SeedGen works better??
+  Or for easier and robust implementation? C/Java slicer + stock AFL++/Jazzer?
+- 
 
 # TODO:
 - top SARIF score

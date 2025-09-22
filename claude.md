@@ -15,3 +15,4 @@ After we completing the discussion on one question, I'll ask you to summarize th
 - No duplicate or redundant description, no overclaim, no exaggeration, keep the markdown well organized and the description simple and accurate
 - Keep updating the main roadmap `notes/readme.md` if needed
 - for the code location referenced in any markdown under `notes`, remember to use [xx](yy) format and use the full GitHub URL for yy so it is directly clickable when people viewing the markdown file such as in github. The format should be `https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/path/to/file.py` for files and `https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/path/to/file.py#L123` for specific line references
+- for file links please use relative file name with something like "https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/workflow.py" for url

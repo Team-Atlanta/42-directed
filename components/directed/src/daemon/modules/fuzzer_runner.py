@@ -71,7 +71,7 @@ class FuzzerRunner:
         """
         # This property encapsulates the long output directory path
         return self.helper_path.parent.parent / 'build' / 'out' / self.project_name
-    
+
     def workdir_from_dockerfile(self, fuzz_tooling, project_name):
         WORKDIR_REGEX = re.compile(r'\s*WORKDIR\s*([^\s]+)')
         dockerfile_path = os.path.join(
@@ -98,7 +98,7 @@ class FuzzerRunner:
         Args:
             harness_name (str): The name of the harness.
         """
-        return self.helper_path.parent.parent / 'build' / 'out' / self.project_name / 'seedgen' / harness_name 
+        return self.helper_path.parent.parent / 'build' / 'out' / self.project_name / 'seedgen' / harness_name
 
     def prepare(self):
         """
@@ -161,8 +161,8 @@ class FuzzerRunner:
         return True
 
 
-    def run_fuzzer_with_pid(self, harness_name: str, instance_id: str, harness_args=[], 
-                           sanitizer='address', extends_env=None, corpus_dir=None, 
+    def run_fuzzer_with_pid(self, harness_name: str, instance_id: str, harness_args=[],
+                           sanitizer='address', extends_env=None, corpus_dir=None,
                            architecture='x86_64', master=True, slaves=None):
         """
         Runs a fuzzer (harness) in a Docker container as a detached background process.
@@ -186,14 +186,14 @@ class FuzzerRunner:
             slaves = int(os.getenv('AIXCC_AFL_SLAVE_NUM', '4'))
 
         log_telemetry_action(title="Fuzzer run",msg_list=[f"Harness name: {harness_name}, Instance ID: {instance_id}, Sanitizer: {sanitizer}, Master: {master}, Slaves: {slaves}"],action_name="run_fuzzer_with_pid",status="OK",level="info")
-        
+
         env = [
             'FUZZING_ENGINE=afl',
             f'SANITIZER={sanitizer}',
             'RUN_FUZZER_MODE=interactive',
             'HELPER=True',
         ]
-        
+
         # Use distributed mode to run multiple fuzzers and sync seeds in the future
         afl_fuzzer_args = "--version;echo IyEvYmluL2Jhc2gKCk1BU1RFUj1mYWxzZQpTTEFWRV9TVEFSVD0tMQpTTEFWRV9FTkQ9LTEKTkVXX0FSR1M9KCkKT1VUPSQoZWNobyAiJFBBVEgiIHwgY3V0IC1kOiAtZjEpCgoKd2hpbGUgKCggIiQjIiApKTsgZG8KICBjYXNlICIkMSIgaW4KICAgIC0tbWFzdGVyKQogICAgICBNQVNURVI9dHJ1ZQogICAgICBzaGlmdAogICAgICA7OwogICAgLS1zbGF2ZS1zdGFydCkKICAgICAgU0xBVkVfU1RBUlQ9IiQyIgogICAgICBzaGlmdCAyCiAgICAgIDs7CiAgICAtLXNsYXZlLWVuZCkKICAgICAgU0xBVkVfRU5EPSIkMiIKICAgICAgc2hpZnQgMgogICAgICA7OwogICAgKikKICAgICAgTkVXX0FSR1MrPSgiJDEiKQogICAgICBzaGlmdAogICAgICA7OwogIGVzYWMKZG9uZQoKaWYgWyAiJE1BU1RFUiIgPSB0cnVlIF07IHRoZW4KICBDTUQ9IiRPVVQvYWZsLWZ1enogLU0gbWFzdGVyICR7TkVXX0FSR1NbKl19IgogIGVjaG8gIkV4ZWN1dGluZzogJENNRCIKICAiJE9VVC9hZmwtZnV6eiIgLU0gbWFzdGVyICIke05FV19BUkdTW0BdfSIgJgpmaQoKaWYgW1sgIiRTTEFWRV9TVEFSVCIgLWdlIDAgJiYgIiRTTEFWRV9FTkQiIC1nZSAiJFNMQVZFX1NUQVJUIiBdXTsgdGhlbgogIGZvciAoKCBpPVNMQVZFX1NUQVJUOyBpPD1TTEFWRV9FTkQ7IGkrKyApKTsgZG8KICAgIENNRD0iJE9VVC9hZmwtZnV6eiAtUyBzbGF2ZSRpICR7TkVXX0FSR1NbKl19IgogICAgZWNobyAiRXhlY3V0aW5nOiAkQ01EIgogICAgIiRPVVQvYWZsLWZ1enoiIC1TICJzbGF2ZSRpIiAiJHtORVdfQVJHU1tAXX0iICYKICBkb25lCmZpCgp3YWl0Cg==| base64 -d > /tmp/run_fuzzer_distributed; chmod +x /tmp/run_fuzzer_distributed; /tmp/run_fuzzer_distributed"
         if master:
@@ -204,7 +204,7 @@ class FuzzerRunner:
         self.slave_num += 1
         # Add the AFL fuzzer args to env
         env.append(f'AFL_FUZZER_ARGS={afl_fuzzer_args}')
-        
+
         if extends_env:
             env += extends_env
 
@@ -237,14 +237,14 @@ class FuzzerRunner:
             harness_name=harness_name,
             instance_id=instance_id
         )
-        
+
         self.syncers[harness_name] = SeedSyncer(
             task_id = self.task_id,
             harness = harness_name,
             output_dir = output_dir,
             interval = 600
-        )  
-        
+        )
+
         run_args.extend([
             '-v',
             f'{output_dir}:/out',
@@ -279,7 +279,7 @@ class FuzzerRunner:
             logging.error(f"CrashHandler not initialized for harness: {harness_name}")
             log_telemetry_action(title="CrashHandler not initialized",msg_list=[f"Harness name: {harness_name}"],action_name="start_observer",status="ERROR",level="debug")
             raise RuntimeError(f"CrashHandler not initialized for harness: {harness_name}")
-        
+
         self.observers[harness_name].start()
 
     def start_syncer(self, harness_name: str):
@@ -294,7 +294,7 @@ class FuzzerRunner:
             logging.error(f"SeedSyncer not initialized for harness: {harness_name}")
             log_telemetry_action(title="SeedSyncer not initialized",msg_list=[f"Harness name: {harness_name}"],action_name="start_syncer",status="ERROR",level="debug")
             raise RuntimeError(f"SeedSyncer not initialized for harness: {harness_name}")
-        
+
         self.syncers[harness_name].start()
 
     def stop_fuzzer(self, harness_name: str = None):
@@ -323,12 +323,12 @@ class FuzzerRunner:
                 else:
                     logging.info(f"Container {container_id} stopped.")
                 del self.containers[harness]
-            
+
             # Stop the observer if it exists
             if harness in self.observers:
                 self.observers[harness].stop()
                 del self.observers[harness]
-                
+
             # Stop the syncer if it exists
             if harness in self.syncers:
                 self.syncers[harness].stop()
@@ -337,10 +337,10 @@ class FuzzerRunner:
     def detect_fuzz_targets(self):
         """
         Detects and returns all fuzz targets in the output directory.
-        
+
         Returns:
             list[str]: A list of detected fuzz target filenames.
-        
+
         Raises:
             FileNotFoundError: If the fuzzer output directory does not exist.
         """
@@ -348,14 +348,14 @@ class FuzzerRunner:
             logging.error("Fuzzer output directory not found: %s", self.output_dir)
             log_telemetry_action(title="Fuzzer output directory not found",msg_list=[f"Output directory: {self.output_dir}"],action_name="detect_fuzz_targets",status="ERROR",level="debug")
             raise FileNotFoundError("Fuzzer output directory not found")
-        
+
         # Call the existing utility function to find fuzz targets.
         fuzz_targets = find_fuzz_targets(str(self.output_dir))
         logging.debug("Detected fuzz targets: %s", fuzz_targets)
         log_telemetry_action(title="Fuzz targets detected",msg_list=[f"Fuzz targets: {fuzz_targets}"],action_name="detect_fuzz_targets",status="OK",level="verbose")
         return fuzz_targets
-    
-    
+
+
     def pull_seeds_seedgen(self, task_id: str, harness_name: str):
         """
         Fetches the latest seedgen corpus for a given task and harness.
@@ -363,7 +363,7 @@ class FuzzerRunner:
         Args:
             task_id (str): Task identifier
             harness_name (str): The name of the harness.
-            
+
         Returns:
             int: The number of files in the seedgen corpus.
         """
