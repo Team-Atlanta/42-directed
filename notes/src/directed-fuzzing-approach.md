@@ -147,7 +147,7 @@ if not result_path:
 
 ### Slice Component Architecture
 
-**Input Processing**: [`components/slice/src/daemon/slice_msg.py`](../components/slice/src/daemon/slice_msg.py):
+**Input Processing**: [`components/slice/src/daemon/slice_msg.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/slice_msg.py):
 ```python
 @dataclass
 class SliceMsg:
@@ -235,7 +235,7 @@ class SliceMsg:
 
 Interestingly, **Java projects do NOT use the directed fuzzing component at all**. Instead, they have a completely separate but parallel approach:
 
-**Java Detection and Skip** ([`components/directed/src/daemon/daemon.py:247-252`](../components/directed/src/daemon/daemon.py#L247-L252)):
+**Java Detection and Skip** ([`components/directed/src/daemon/daemon.py:247-252`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L247-L252)):
 ```python
 # Check if JVM project
 if is_jvm_project(oss_fuzz_path, dmsg.project_name):
@@ -244,13 +244,13 @@ if is_jvm_project(oss_fuzz_path, dmsg.project_name):
 ```
 
 **Separate Java Pipeline**:
-1. **JavaSlicer Component** ([`components/javaslicer/`](../components/javaslicer/)) uses IBM WALA for program slicing
+1. **JavaSlicer Component** ([`components/javaslicer/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/)) uses IBM WALA for program slicing
 2. **PrimeFuzz Integration** consumes JavaSlicer results for targeted fuzzing
 3. **Jazzer Instrumentation** uses `--instrumentation_includes` parameter
 
 ### Java Slicing Pipeline
 
-**Step 1: WALA-Based Program Slicing** ([`components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java`](../components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java)):
+**Step 1: WALA-Based Program Slicing** ([`components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java)):
 ```java
 // 1. Parse diff to identify changed methods
 // 2. Use IBM WALA for bytecode analysis
@@ -260,7 +260,7 @@ if is_jvm_project(oss_fuzz_path, dmsg.project_name):
 //    - .filtered_classes.txt (filtered class lists)
 ```
 
-**Step 2: Fuzzer Integration** ([`components/primefuzz/utils/target_utils.py:294-312`](../components/primefuzz/utils/target_utils.py#L294-L312)):
+**Step 2: Fuzzer Integration** ([`components/primefuzz/utils/target_utils.py:294-312`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/utils/target_utils.py#L294-L312)):
 ```python
 def get_slicing_extra_args(slice_result, harness_name) -> str:
     slice_res_file = Path(slice_result) / f"{harness_name}.instrumentation_includes.txt"
