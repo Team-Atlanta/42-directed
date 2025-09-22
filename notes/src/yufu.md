@@ -302,7 +302,7 @@ augmentation?
 - Why don't you use traditional directed fuzzer (e.g. AFLGo?) Do you evaluate
   between them and find that slicing + AFL++/SeedGen works better??
   Or for easier and robust implementation? C/Java slicer + stock AFL++/Jazzer?
-- 
+- Why no dict_gen for C? only Java. (Or I miss it??)
 
 # TODO:
 - top SARIF score
