@@ -157,7 +157,7 @@ directed_slice (
 
 ## Enum Type Definitions
 
-### Core Enums ([`schema.sql`](../components/db/schema.sql))
+### Core Enums ([`schema.sql`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/db/schema.sql))
 
 ```sql
 -- Task types
@@ -193,7 +193,7 @@ CREATE TYPE submissionstatusenum AS ENUM (
 
 ## Container Setup and Deployment
 
-### Dockerfile Configuration ([`Dockerfile`](../components/db/Dockerfile))
+### Dockerfile Configuration ([`Dockerfile`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/db/Dockerfile))
 
 ```dockerfile
 FROM postgres:13-alpine

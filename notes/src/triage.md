@@ -16,9 +16,9 @@ The Triage component is a comprehensive bug analysis and classification system t
 
 ## Key Components
 
-### Task Handler ([task_handler.py](../components/triage/task_handler.py))
+### Task Handler ([task_handler.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py))
 
-**Main Entry Point**: [listen_for_tasks()](../components/triage/task_handler.py#L574-L937)
+**Main Entry Point**: [listen_for_tasks()](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L574-L937)
 - Connects to RabbitMQ and processes incoming crash tasks
 - Multi-threaded processing with configurable prefetch count
 - Retry logic with exponential backoff (max 3 attempts)
@@ -43,13 +43,13 @@ The Triage component is a comprehensive bug analysis and classification system t
 
 ### Project Building System
 
-#### Build Orchestration ([build_project()](../components/triage/task_handler.py#L68-L225))
+#### Build Orchestration ([build_project()](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L68-L225))
 - **Caching Strategy**: Redis-coordinated build caching per task/sanitizer/state
 - **Archive Extraction**: Handles repository, fuzzing tooling, and diff archives
 - **Diff Application**: Supports both file and directory patch formats
 - **Container Management**: Launches persistent runner containers
 
-#### OSS-Fuzz Integration ([infra/oss_fuzz.py](../components/triage/infra/oss_fuzz.py))
+#### OSS-Fuzz Integration ([infra/oss_fuzz.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/infra/oss_fuzz.py))
 - **Docker-based Compilation**: Uses OSS-Fuzz Dockerfiles
 - **Sanitizer Support**: Address, Memory, Undefined Behavior sanitizers
 - **Harness Discovery**: Automatically finds fuzzer binaries with `LLVMFuzzerTestOneInput`
@@ -59,12 +59,12 @@ The Triage component is a comprehensive bug analysis and classification system t
 
 #### Task Processing Modes
 
-**Full Mode** ([process_task_with_sanitizer()](../components/triage/task_handler.py#L694-L717)):
+**Full Mode** ([process_task_with_sanitizer()](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L694-L717)):
 - Builds project with specified sanitizer
 - Replays PoC against target harness(es)
 - Analyzes crash output for vulnerability classification
 
-**Delta Mode** ([task_handler.py#L719-L778](../components/triage/task_handler.py#L719-L778)):
+**Delta Mode** ([task_handler.py#L719-L778](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L719-L778)):
 - Builds both unpatched (base) and patched (delta) versions
 - Compares crash behavior between states
 - Only processes crashes that appear in delta but not base state
@@ -77,7 +77,7 @@ The Triage component is a comprehensive bug analysis and classification system t
 
 ### Sanitizer Report Parsing
 
-#### Unified Parser ([parser/unifiedparser.py](../components/triage/parser/unifiedparser.py))
+#### Unified Parser ([parser/unifiedparser.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/parser/unifiedparser.py))
 - **Multi-format Support**: Handles various sanitizer output formats
 - **Pattern Matching**: Regex-based extraction of bug types and locations
 - **Sanitizer Types**: AddressSanitizer, MemorySanitizer, UBSan, LeakSanitizer
@@ -100,9 +100,9 @@ class UnifiedSanitizerReport:
 
 ### Deduplication System
 
-#### Workflow ([dedup/workflow.py](../components/triage/dedup/workflow.py))
+#### Workflow ([dedup/workflow.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/workflow.py))
 
-**Main Process** ([do_dedup()](../components/triage/dedup/workflow.py#L100-L186)):
+**Main Process** ([do_dedup()](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/workflow.py#L100-L186)):
 1. **Repository Setup**: Extracts and prepares project files
 2. **Crash Retrieval**: Gets crash report from database
 3. **Cluster Query**: Finds existing bug clusters for task
@@ -111,7 +111,7 @@ class UnifiedSanitizerReport:
 
 #### Deduplication Methods
 
-**Codex-based Deduplication** ([dedup/codex_dedup.py](../components/triage/dedup/codex_dedup.py#L26-L98)):
+**Codex-based Deduplication** ([dedup/codex_dedup.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/codex_dedup.py#L26-L98)):
 - **AI-Powered Analysis**: Uses LLM to understand root causes
 - **Code-Aware**: Analyzes stack traces against actual source code
 - **Conservative Approach**: Only marks as duplicate with 100% confidence
@@ -123,7 +123,7 @@ class UnifiedSanitizerReport:
 3. Requires exact location identification in source code
 4. Returns binary YES/NO decision on duplication
 
-**ClusterFuzz Deduplication** ([dedup/clusterfuzz_dedup.py](../components/triage/dedup/clusterfuzz_dedup.py)):
+**ClusterFuzz Deduplication** ([dedup/clusterfuzz_dedup.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/clusterfuzz_dedup.py)):
 - Traditional stack trace-based comparison
 - Fallback method when AI analysis unavailable
 
@@ -153,7 +153,7 @@ CREATE TABLE bug_groups (
 );
 ```
 
-#### Clustering Logic ([dedup_and_update_db()](../components/triage/task_handler.py#L401-L565))
+#### Clustering Logic ([dedup_and_update_db()](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L401-L565))
 1. **Profile Creation**: Creates new bug profile for unseen crash signatures
 2. **Redis Locking**: Prevents race conditions during profile creation
 3. **Cluster Assignment**: Associates profiles with existing or new clusters

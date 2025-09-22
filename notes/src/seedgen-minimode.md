@@ -238,7 +238,7 @@ graph TB
 
 ## Detailed Component Analysis
 
-### 1. Harness Discovery ([`find_files_with_fuzzer_function`](../components/seedgen/infra/aixcc.py#L358))
+### 1. Harness Discovery ([`find_files_with_fuzzer_function`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L358))
 
 Mini Mode begins by identifying all harness files in the project that contain fuzzer entry points.
 
@@ -252,7 +252,7 @@ Mini Mode begins by identifying all harness files in the project that contain fu
 - **Java/JVM**: Searches for `fuzzerTestOneInput` method
 - Returns dictionary mapping harness names to their source code
 
-### 2. SeedMiniAgent Pipeline ([`seedmini.py`](../components/seedgen/seedgen2/seedmini.py))
+### 2. SeedMiniAgent Pipeline ([`seedmini.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py))
 
 The core orchestrator that manages a **simplified seed generation process** without compilation or coverage feedback.
 
@@ -279,51 +279,51 @@ Mini Mode Pipeline:
 
 **Pipeline Stages:**
 
-#### Step 1: Initial Script Generation ([`generate_first_script`](../components/seedgen/seedgen2/agents/glance.py#L39) at [seedmini.py#L52](../components/seedgen/seedgen2/seedmini.py#L52))
+#### Step 1: Initial Script Generation ([`generate_first_script`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/glance.py#L39) at [seedmini.py#L52](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L52))
 - Uses **Sowbot** graph with `seedd=None` parameter
 - When `seedd` is None, Sowbot operates in "mini mode":
   - Generates Python script based on harness analysis
   - Validates script syntax only (no execution)
   - Returns empty `SeedFeedback` (no coverage data)
-- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py#L12)
+- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/glance.py#L12)
 - Creates initial generator script template
 
-#### Step 2: Structure Documentation ([`update_doc_mini`](../components/seedgen/seedgen2/agents/alignment.py#L106) at [seedmini.py#L54](../components/seedgen/seedgen2/seedmini.py#L54))
+#### Step 2: Structure Documentation ([`update_doc_mini`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L106) at [seedmini.py#L54](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L54))
 - Uses **Plainbot** for simple text generation
 - Analyzes harness source code to extract:
   - Input data structures
   - Field requirements
   - Size constraints
   - Format expectations
-- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L26)
+- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L26)
 - Returns text documentation (not executable code)
 
-#### Step 3: Filetype Detection ([`get_filetype`](../components/seedgen/seedgen2/agents/filetype.py#L11) at [seedmini.py#L55](../components/seedgen/seedgen2/seedmini.py#L55))
+#### Step 3: Filetype Detection ([`get_filetype`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L11) at [seedmini.py#L55](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L55))
 - Identifies target file format from:
   - Harness source code patterns
   - Project name hints
   - Function signatures
-- Prompt: [`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py#L11)
+- Prompt: [`PROMPT_determine_file_type`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L11)
 - Removes quotes/ticks from result for clean string
 - Returns: "XML", "JSON", "binary", or "unknown"
 
 #### Step 4: Final Script Generation (Conditional Path)
 
-**Path A: Unknown Filetype** ([seedmini.py#L63-65](../components/seedgen/seedgen2/seedmini.py#L63))
-- Uses [`align_script`](../components/seedgen/seedgen2/agents/alignment.py#L60) 
+**Path A: Unknown Filetype** ([seedmini.py#L63-65](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L63))
+- Uses [`align_script`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L60) 
 - Aligns initial script with structure documentation
-- Prompt: [`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py#L11)
+- Prompt: [`PROMPT_ALIGNMENT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L11)
 - Generates final script based on documented requirements
 
-**Path B: Known Filetype** ([seedmini.py#L67-78](../components/seedgen/seedgen2/seedmini.py#L67))
-- First generates reference script via [`generate_reference_script`](../components/seedgen/seedgen2/agents/filetype.py#L38)
-  - Prompt: [`PROMPT_reference`](../components/seedgen/seedgen2/agents/filetype.py#L24)
-- Then uses [`generate_based_on_filetype`](../components/seedgen/seedgen2/agents/filetype.py#L50)
+**Path B: Known Filetype** ([seedmini.py#L67-78](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L67))
+- First generates reference script via [`generate_reference_script`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L38)
+  - Prompt: [`PROMPT_reference`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L24)
+- Then uses [`generate_based_on_filetype`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L50)
   - Combines initial script, structure doc, and reference
-  - Prompt: [`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py#L28)
+  - Prompt: [`PROMPT_generate`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L28)
   - Produces format-aware generator script
 
-### 3. Sowbot in Mini Mode ([`sowbot.py#L263-272`](../components/seedgen/seedgen2/graphs/sowbot.py#L263))
+### 3. Sowbot in Mini Mode ([`sowbot.py#L263-272`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/sowbot.py#L263))
 
 When `seedd` parameter is None, Sowbot operates differently:
 
@@ -347,7 +347,7 @@ else:
 - Does NOT provide feedback for refinement
 - Returns empty feedback structure
 
-### 4. Seed Generation in Docker ([`SeedGeneratorStore`](../components/seedgen/seedgen2/utils/generators.py#L29))
+### 4. Seed Generation in Docker ([`SeedGeneratorStore`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/utils/generators.py#L29))
 
 Mini Mode uses the same Docker-based execution as other modes, but without coverage collection:
 
@@ -418,8 +418,8 @@ For a comprehensive comparison of all seedgen modes, see the [Mode Comparison Su
 
 ## Implementation References
 
-- Main orchestrator: [`run_mini_mode()`](../components/seedgen/infra/aixcc.py#L340-459)
-- Agent implementation: [`SeedMiniAgent`](../components/seedgen/seedgen2/seedmini.py#L20-79)
-- Generator execution: [`SeedGeneratorStore`](../components/seedgen/seedgen2/utils/generators.py#L29-135)
-- Sowbot mini mode: [`sowbot.py#L263-272`](../components/seedgen/seedgen2/graphs/sowbot.py#L263)
-- Structure documentation: [`update_doc_mini()`](../components/seedgen/seedgen2/agents/alignment.py#L106-124)
+- Main orchestrator: [`run_mini_mode()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L340-459)
+- Agent implementation: [`SeedMiniAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L20-79)
+- Generator execution: [`SeedGeneratorStore`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/utils/generators.py#L29-135)
+- Sowbot mini mode: [`sowbot.py#L263-272`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/sowbot.py#L263)
+- Structure documentation: [`update_doc_mini()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L106-124)

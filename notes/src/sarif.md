@@ -9,17 +9,17 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 ### Two-Tier Validation System
 
 #### 1. SARIF Agent (Main Service)
-- **Location**: [src/app.py](../components/sarif/src/app.py)
+- **Location**: [src/app.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/app.py)
 - **Purpose**: Message queue-based daemon that processes SARIF validation requests
 - **Key Components**:
-  - **Daemon**: [src/daemon.py](../components/sarif/src/daemon.py#L17-L131) - Manages workspace creation and task coordination
-  - **Task Worker**: [src/tasks.py](../components/sarif/src/tasks.py#L23-L173) - Orchestrates validation workflow
+  - **Daemon**: [src/daemon.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py#L17-L131) - Manages workspace creation and task coordination
+  - **Task Worker**: [src/tasks.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L23-L173) - Orchestrates validation workflow
   - **Multiple Checker Types**: Different validation strategies for various scenarios
 
 #### 2. SARIF Evaluator (AI-Powered Analysis)
-- **Location**: [crs-prime-sarif-evaluator/](../components/sarif/crs-prime-sarif-evaluator/)
+- **Location**: [crs-prime-sarif-evaluator/](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/)
 - **Purpose**: LLM-based detailed analysis of SARIF reports against source code
-- **Main Entry**: [evaluator/main.py](../components/sarif/crs-prime-sarif-evaluator/evaluator/main.py#L25-L139)
+- **Main Entry**: [evaluator/main.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/main.py#L25-L139)
 
 ## Validation Workflow
 
@@ -34,13 +34,13 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
    - `fuzzing_tooling`: Fuzzing infrastructure archive
    - `diff`: Delta changes (for delta mode)
 
-2. **Workspace Setup**: [daemon.py#L66-L131](../components/sarif/src/daemon.py#L66-L131)
+2. **Workspace Setup**: [daemon.py#L66-L131](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py#L66-L131)
    - Creates isolated workspace directory
    - Extracts repository archives and fuzzing tooling
    - Applies diff patches for delta mode validation
    - Saves SARIF report as JSON file
 
-3. **Task Worker Execution**: [tasks.py#L38-L77](../components/sarif/src/tasks.py#L38-L77)
+3. **Task Worker Execution**: [tasks.py#L38-L77](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L38-L77)
    - Parses SARIF report and validates file references
    - Routes to appropriate validation strategy
    - Writes results to database
@@ -50,23 +50,23 @@ The SARIF component is a sophisticated validation system for [SARIF](https://sar
 The SARIF component employs two active validation strategies based on project type:
 
 #### 1. Java Project Validation (Direct AI Analysis)
-- **Logic**: [tasks.py#L88-L144](../components/sarif/src/tasks.py#L88-L144)
+- **Logic**: [tasks.py#L88-L144](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L88-L144)
 - **Method**: Direct AI evaluation using LLM analysis
 - **Models**: OpenAI or Anthropic (configurable)
 - **Retries**: Up to 20 attempts for reliable results (fault tolerance design)
 - **Result Processing**: Extracts `assessment` field from JSON response
 
 #### 2. C/C++ Project Validation (Seeds Checker)
-- **Implementation**: [checkers/seeds.py](../components/sarif/src/checkers/seeds.py)
-- **Logic**: [tasks.py#L157-L160](../components/sarif/src/tasks.py#L157-L160)
+- **Implementation**: [checkers/seeds.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py)
+- **Logic**: [tasks.py#L157-L160](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L157-L160)
 - **Multi-Stage Process**:
 
-  1. **Preliminary AI Check**: [seeds.py#L124-L170](../components/sarif/src/checkers/seeds.py#L124-L170)
+  1. **Preliminary AI Check**: [seeds.py#L124-L170](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L124-L170)
      - Quick false positive detection
      - Uses `--preliminary` flag to reduce false negatives
      - Early termination if clearly incorrect
 
-  2. **Crash-Based Validation**: [seeds.py#L173-L377](../components/sarif/src/checkers/seeds.py#L173-L377)
+  2. **Crash-Based Validation**: [seeds.py#L173-L377](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L173-L377)
      - Monitors database for new crash reports (`BugProfiles`)
      - Correlates crashes with SARIF findings
      - Uses AI to analyze crash reports against SARIF claims
@@ -74,16 +74,16 @@ The SARIF component employs two active validation strategies based on project ty
 
 ### Unused/Commented-Out Validation Strategies
 
-**Note**: The following validation strategies exist as implemented classes but are **completely commented out** in the main workflow [tasks.py#L147-L156](../components/sarif/src/tasks.py#L147-L156):
+**Note**: The following validation strategies exist as implemented classes but are **completely commented out** in the main workflow [tasks.py#L147-L156](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L147-L156):
 
 #### Slice-Based Validation (Inactive)
-- **Implementation**: [checkers/slice.py](../components/sarif/src/checkers/slice.py)
+- **Implementation**: [checkers/slice.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/slice.py)
 - **Purpose**: Code slicing-based validation creating minimal code slices containing SARIF-reported functions
 - **Process**: Would extract functions, send slicing requests via `SARIF_TO_SLICE_QUEUE`, and validate if slice contains `LLVMFuzzerTestOneInput`
 - **Status**: Imported but not used in current implementation
 
 #### Directed Fuzzing Validation (Inactive)
-- **Implementation**: [checkers/directed_fuzzing.py](../components/sarif/src/checkers/directed_fuzzing.py)
+- **Implementation**: [checkers/directed_fuzzing.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/directed_fuzzing.py)
 - **Purpose**: Advanced empirical validation using directed fuzzing on code slices
 - **Process**: Would create targeted code slices and send to fuzzing infrastructure via `CRS_DF_QUEUE`
 - **Status**: Imported but not used in current implementation
@@ -92,7 +92,7 @@ The SARIF component employs two active validation strategies based on project ty
 
 **Current State**: The SARIF component has evolved from a more complex architecture to a streamlined two-strategy approach. Evidence from the codebase suggests:
 
-1. **Commented-Out Code**: Lines [147-156 in tasks.py](../components/sarif/src/tasks.py#L147-L156) show fully implemented SliceChecker and DirectedFuzzingChecker that are commented out with the note "it just sent a message to the queue, just let it run"
+1. **Commented-Out Code**: Lines [147-156 in tasks.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L147-L156) show fully implemented SliceChecker and DirectedFuzzingChecker that are commented out with the note "it just sent a message to the queue, just let it run"
 
 2. **Infrastructure Present**: Docker Compose configuration includes slice and directed fuzzing services, indicating these were previously operational
 
@@ -104,7 +104,7 @@ The SARIF component employs two active validation strategies based on project ty
 - Dependent on external services that might not be consistently available
 - Part of experimental features that were later streamlined
 
-4. **Code Injector**: A sophisticated Clang-based tool for injecting target-reach logging was developed [code_injector.cpp](../components/sarif/src/code_injector/code_injector.cpp) but is completely unused - built in Docker but never called
+4. **Code Injector**: A sophisticated Clang-based tool for injecting target-reach logging was developed [code_injector.cpp](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/code_injector/code_injector.cpp) but is completely unused - built in Docker but never called
 
 ### AI-Powered Analysis
 
@@ -116,13 +116,13 @@ The SARIF component employs two active validation strategies based on project ty
 - **Multi-turn Conversation**: Initial analysis + structured summary
 
 #### Analysis Process
-- **System Prompt**: [prompts.py#L1-L21](../components/sarif/crs-prime-sarif-evaluator/evaluator/prompts.py#L1-L21)
+- **System Prompt**: [prompts.py#L1-L21](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/prompts.py#L1-L21)
   - Security vulnerability verification specialist role
   - Code tracing and data flow analysis instructions
   - Language-specific vulnerability detection (C/Java)
   - 12,000 word limit for focused analysis
 
-- **Summary Prompt**: [prompts.py#L23-L26](../components/sarif/crs-prime-sarif-evaluator/evaluator/prompts.py#L23-L26)
+- **Summary Prompt**: [prompts.py#L23-L26](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/prompts.py#L23-L26)
   - Structured JSON output: `{"assessment": "correct | incorrect", "description": "..."}`
 
 ## Database Integration
@@ -132,8 +132,8 @@ The SARIF component employs two active validation strategies based on project ty
 - **Fields**: `sarif_id`, `result` (boolean), `task_id`, `description`
 
 ### Unused Database Models
-- **SarifSlice**: [sarif_slice.py#L5-L11](../components/sarif/src/models/sarif_slice.py#L5-L11) - Would store slice results (unused, for commented-out SliceChecker)
-- **DirectedSlice**: [directed_slice.py#L5-L10](../components/sarif/src/models/directed_slice.py#L5-L10) - Would store directed fuzzing slice results (unused, for commented-out DirectedFuzzingChecker)
+- **SarifSlice**: [sarif_slice.py#L5-L11](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/models/sarif_slice.py#L5-L11) - Would store slice results (unused, for commented-out SliceChecker)
+- **DirectedSlice**: [directed_slice.py#L5-L10](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/models/directed_slice.py#L5-L10) - Would store directed fuzzing slice results (unused, for commented-out DirectedFuzzingChecker)
 
 ### Crash Data Sources
 - **BugProfiles**: Crash summaries and reports from fuzzing
@@ -159,14 +159,14 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 ```
 
 ### Configuration Parameters
-- **Slicing Timeout**: 20 minutes [config.py#L7](../components/sarif/src/config.py#L7)
-- **General Timeout**: 30 minutes [config.py#L8](../components/sarif/src/config.py#L8)
-- **Workspace Directory**: `/tmp/sarif-agent` [config.py#L9](../components/sarif/src/config.py#L9)
+- **Slicing Timeout**: 20 minutes [config.py#L7](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/config.py#L7)
+- **General Timeout**: 30 minutes [config.py#L8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/config.py#L8)
+- **Workspace Directory**: `/tmp/sarif-agent` [config.py#L9](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/config.py#L9)
 
 ### Deployment Options
 - **Mock Mode**: `--mock` flag enables testing without external dependencies
 - **Debug Mode**: `--debug` flag provides verbose logging
-- **Docker Support**: Containerized deployment with [Dockerfile](../components/sarif/Dockerfile)
+- **Docker Support**: Containerized deployment with [Dockerfile](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/Dockerfile)
 
 ## Integration Points
 
@@ -185,23 +185,23 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 ## Code Analysis Utilities
 
 ### Tree-sitter Integration
-- **C Function Extraction**: [c.py#L3-L34](../components/sarif/src/utils/c.py#L3-L34)
+- **C Function Extraction**: [c.py#L3-L34](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/utils/c.py#L3-L34)
   - Uses tree-sitter for precise C/C++ function parsing
   - Maps line numbers to function names for SARIF location resolution
   - Addresses the "TODO" from README about better function name extraction
 
 ### Code Injector (Unused)
-- **Implementation**: [code_injector/code_injector.cpp](../components/sarif/src/code_injector/code_injector.cpp)
+- **Implementation**: [code_injector/code_injector.cpp](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/code_injector/code_injector.cpp)
 - **Purpose**: Clang-based tool for injecting target-reach logging into C/C++ code
 - **Functionality**:
   - Injects assembly code `AIXCC_REACH_TARGET_<id>` at specified line numbers
   - Uses direct syscalls to write to stderr for minimal overhead
-  - Built as standalone executable via CMake [CMakeLists.txt](../components/sarif/src/code_injector/CMakeLists.txt)
-- **Status**: **Completely commented out** in SeedsChecker [seeds.py#L70-L114](../components/sarif/src/checkers/seeds.py#L70-L114)
-- **Docker Build**: Built during container creation but never used [Dockerfile#L32-L37](../components/sarif/Dockerfile#L32-L37)
+  - Built as standalone executable via CMake [CMakeLists.txt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/code_injector/CMakeLists.txt)
+- **Status**: **Completely commented out** in SeedsChecker [seeds.py#L70-L114](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L70-L114)
+- **Docker Build**: Built during container creation but never used [Dockerfile#L32-L37](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/Dockerfile#L32-L37)
 
 ### Containerized Testing Infrastructure
-- **Docker Compose Setup**: [docker-compose.yml#L1-L148](../components/sarif/docker-compose.yml#L1-L148)
+- **Docker Compose Setup**: [docker-compose.yml#L1-L148](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/docker-compose.yml#L1-L148)
   - **RabbitMQ**: Message queue coordination (port 23333 for management)
   - **PostgreSQL**: Database with `b3yond_dev.sql` schema initialization
   - **Redis**: Caching layer for performance optimization
@@ -213,10 +213,10 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 
 ### Incoming Messages (Active)
 
-**Primary Consumer**: `CRS_QUEUE` - [daemon.py#L32](../components/sarif/src/daemon.py#L32)
+**Primary Consumer**: `CRS_QUEUE` - [daemon.py#L32](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py#L32)
 - **Source**: CRS orchestration system
-- **Handler**: [daemon.py#L42-L131](../components/sarif/src/daemon.py#L42-L131)
-- **Message Structure**: [daemon.py#L52-L63](../components/sarif/src/daemon.py#L52-L63)
+- **Handler**: [daemon.py#L42-L131](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py#L42-L131)
+- **Message Structure**: [daemon.py#L52-L63](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py#L52-L63)
 ```json
 {
   "task_id": "string",          // Challenge/task identifier
@@ -234,8 +234,8 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 ### Outgoing Messages (Unused - Commented Out)
 
 **1. Slice Service Communication**
-- **Queue**: `SARIF_TO_SLICE_QUEUE` - [slice.py#L66](../components/sarif/src/checkers/slice.py#L66)
-- **Message Structure**: [slice.py#L54-L64](../components/sarif/src/checkers/slice.py#L54-L64)
+- **Queue**: `SARIF_TO_SLICE_QUEUE` - [slice.py#L66](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/slice.py#L66)
+- **Message Structure**: [slice.py#L54-L64](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/slice.py#L54-L64)
 ```json
 {
   "is_sarif": true,
@@ -254,9 +254,9 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 ```
 
 **2. Directed Fuzzing Communication**
-- **Queue 1**: `SLICE_TASK_QUEUE` - [directed_fuzzing.py#L64](../components/sarif/src/checkers/directed_fuzzing.py#L64) (for slice generation)
-- **Queue 2**: `CRS_DF_QUEUE` - [directed_fuzzing.py#L115](../components/sarif/src/checkers/directed_fuzzing.py#L115) (for fuzzing tasks)
-- **DF Message**: [directed_fuzzing.py#L102-L111](../components/sarif/src/checkers/directed_fuzzing.py#L102-L111)
+- **Queue 1**: `SLICE_TASK_QUEUE` - [directed_fuzzing.py#L64](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/directed_fuzzing.py#L64) (for slice generation)
+- **Queue 2**: `CRS_DF_QUEUE` - [directed_fuzzing.py#L115](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/directed_fuzzing.py#L115) (for fuzzing tasks)
+- **DF Message**: [directed_fuzzing.py#L102-L111](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/directed_fuzzing.py#L102-L111)
 ```json
 {
   "task_id": "string",
@@ -272,20 +272,20 @@ CRS_DF_QUEUE         # Would be used by DirectedFuzzingChecker
 
 ### Database Operations (Active Output)
 
-**Primary Output**: PostgreSQL Database - [tasks.py#L57-L76](../components/sarif/src/tasks.py#L57-L76)
+**Primary Output**: PostgreSQL Database - [tasks.py#L57-L76](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L57-L76)
 - **Table**: `SarifResults`
 - **Operation**: Direct database writes for validation results
 - **Fields**: `sarif_id`, `result` (boolean), `task_id`, `description`
-- **Database Access**: [db.py#L13-L17](../components/sarif/src/db.py#L13-L17)
+- **Database Access**: [db.py#L13-L17](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/db.py#L13-L17)
 
 ### Message Queue Infrastructure
 
-**Queue Management**: [msg.py#L8-L77](../components/sarif/src/msg.py#L8-L77)
+**Queue Management**: [msg.py#L8-L77](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/msg.py#L8-L77)
 - **Connection**: RabbitMQ via `pika` library with URL-based connection
-- **Threading Support**: Threaded message consumption [msg.py#L71-L76](../components/sarif/src/msg.py#L71-L76)
-- **Error Handling**: Automatic NACK on processing failures [msg.py#L57](../components/sarif/src/msg.py#L57)
-- **Acknowledgment**: Manual ACK after successful processing [msg.py#L60](../components/sarif/src/msg.py#L60)
-- **Quality of Service**: Prefetch count of 1 for load balancing [msg.py#L73](../components/sarif/src/msg.py#L73)
+- **Threading Support**: Threaded message consumption [msg.py#L71-L76](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/msg.py#L71-L76)
+- **Error Handling**: Automatic NACK on processing failures [msg.py#L57](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/msg.py#L57)
+- **Acknowledgment**: Manual ACK after successful processing [msg.py#L60](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/msg.py#L60)
+- **Quality of Service**: Prefetch count of 1 for load balancing [msg.py#L73](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/msg.py#L73)
 
 ### Communication Patterns
 

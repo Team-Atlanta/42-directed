@@ -17,7 +17,7 @@ The CRS uses a hybrid messaging architecture combining **RabbitMQ** for task dis
 
 ### Exchange Types and Topology
 
-The system uses multiple exchange types defined in [`components/scheduler/internal/messaging/initializer.go`](../components/scheduler/internal/messaging/initializer.go#L8-L26):
+The system uses multiple exchange types defined in [`components/scheduler/internal/messaging/initializer.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/messaging/initializer.go#L8-L26):
 
 ```go
 // Fanout exchanges
@@ -50,7 +50,7 @@ ArtifactQueue        = "artifact_queue"         // Artifact management tasks
 
 #### 1. Task Broadcasting Pattern
 
-**Source**: [`components/scheduler/service/task_routine.go`](../components/scheduler/service/task_routine.go#L101-L141)
+**Source**: [`components/scheduler/service/task_routine.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/service/task_routine.go#L101-L141)
 
 The scheduler broadcasts tasks to multiple services simultaneously using a fanout exchange:
 
@@ -78,7 +78,7 @@ err = ch.Publish(
 
 #### 2. Priority Queue Pattern
 
-**Source**: [`components/triage/task_handler.py`](../components/triage/task_handler.py#L242-L246)
+**Source**: [`components/triage/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L242-L246)
 
 Certain queues support priority messaging for urgent tasks:
 
@@ -102,7 +102,7 @@ Services can send specific messages to targeted queues using direct routing for 
 
 #### Connection Pooling
 
-**Source**: [`components/scheduler/internal/messaging/mq.go`](../components/scheduler/internal/messaging/mq.go#L16-L30)
+**Source**: [`components/scheduler/internal/messaging/mq.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/messaging/mq.go#L16-L30)
 
 ```go
 const ConnectionPoolSize = 10
@@ -139,7 +139,7 @@ The system uses Redis in multiple configurations:
 
 #### 1. Redis Sentinel (High Availability)
 
-**Source**: [`components/triage/utils/redis.py`](../components/triage/utils/redis.py#L19-L58)
+**Source**: [`components/triage/utils/redis.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/utils/redis.py#L19-L58)
 
 ```python
 def init_redis(sentinel_hosts_list, master_name_str, password=None, db=0):
@@ -170,7 +170,7 @@ else:
 
 #### 1. Task State Management
 
-**Source**: [`components/scheduler/service/task_routine.go`](../components/scheduler/service/task_routine.go#L246-L262)
+**Source**: [`components/scheduler/service/task_routine.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/service/task_routine.go#L246-L262)
 
 ```go
 GlobalTaskStatusKey = "global:task_status"
@@ -192,7 +192,7 @@ err := r.redisClient.Set(
 
 #### 2. Task Data Caching
 
-**Source**: [`components/primefuzz/modules/redis_middleware.py`](../components/primefuzz/modules/redis_middleware.py#L239-L277)
+**Source**: [`components/primefuzz/modules/redis_middleware.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/redis_middleware.py#L239-L277)
 
 ```python
 # Store complete task payload
@@ -207,7 +207,7 @@ self.redis_client.expire(hash_key, self.prime_task_expiration)  # 48 hours
 
 #### 3. Build Caching System
 
-**Source**: [`components/triage/task_handler.py`](../components/triage/task_handler.py#L86-L191)
+**Source**: [`components/triage/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L86-L191)
 
 ```python
 redis_build_lock = f"lock:triage:global:{task.task_id}:{sanitizer}:{repo_state}:build"
@@ -222,7 +222,7 @@ lock = redis.lock.Lock(get_redis_client(), redis_build_lock, timeout=600)
 
 #### 4. Metrics and Monitoring
 
-**Source**: [`components/primefuzz/modules/redis_middleware.py`](../components/primefuzz/modules/redis_middleware.py#L398-L425)
+**Source**: [`components/primefuzz/modules/redis_middleware.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/redis_middleware.py#L398-L425)
 
 ```python
 def append_task_metrics(self, task_id: str, metrics: dict) -> bool:
@@ -273,7 +273,7 @@ Database Tasks → Scheduler → RabbitMQ Fanout Exchange → Multiple Worker Qu
 
 **Role**: Bug analysis and classification
 
-**Source**: [`components/triage/task_handler.py`](../components/triage/task_handler.py#L574-L598)
+**Source**: [`components/triage/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L574-L598)
 
 **Message Flow**:
 ```
@@ -290,7 +290,7 @@ triage_queue → Process Bug → Redis (Bug Profiles) → Database → patch_que
 
 **Role**: AI-powered seed generation
 
-**Source**: [`components/seedgen/task_handler.py`](../components/seedgen/task_handler.py#L384-L407)
+**Source**: [`components/seedgen/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L384-L407)
 
 **Message Flow**:
 ```
@@ -306,7 +306,7 @@ seedgen_queue → Generate Seeds → Database → cmin_queue (for non-Java proje
 
 **Role**: Advanced fuzzing orchestration
 
-**Source**: [`components/primefuzz/modules/message_consumer.py`](../components/primefuzz/modules/message_consumer.py#L14-L33)
+**Source**: [`components/primefuzz/modules/message_consumer.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/message_consumer.py#L14-L33)
 
 **Message Flow**:
 ```
@@ -322,7 +322,7 @@ prime_fuzzing_queue → Process Task → Redis (Task Data, Metrics) → Results
 
 **Role**: Result submission and coordination
 
-**Source**: [`components/submitter/redisio.py`](../components/submitter/redisio.py#L36-L109)
+**Source**: [`components/submitter/redisio.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/submitter/redisio.py#L36-L109)
 
 **Message Flow**:
 ```
@@ -384,7 +384,7 @@ REDIS_PASSWORD=secret
 
 ### Kubernetes Integration
 
-**Source**: [`deployment/crs-k8s/b3yond-crs/charts/*/templates/deployment.yaml`](../deployment/crs-k8s/b3yond-crs/charts/)
+**Source**: [`deployment/crs-k8s/b3yond-crs/charts/*/templates/deployment.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/)
 
 The system is designed for Kubernetes deployment with:
 - **Service Mesh**: Each component runs as a separate pod
@@ -426,7 +426,7 @@ The system is designed for Kubernetes deployment with:
 
 ### Telemetry Integration
 
-**Source**: [`components/scheduler/service/task_routine.go`](../components/scheduler/service/task_routine.go#L70-L98)
+**Source**: [`components/scheduler/service/task_routine.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/service/task_routine.go#L70-L98)
 
 ```go
 span := fmt.Sprintf("BugBuster:Processing:%s", task.ID)

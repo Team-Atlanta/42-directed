@@ -25,7 +25,7 @@ The component implements a **multi-stage pipeline architecture**:
 
 ### Key Components
 
-#### 1. Main Entry Point ([`app.py`](../components/directed/src/app.py))
+#### 1. Main Entry Point ([`app.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/app.py))
 
 ```python
 def main():
@@ -34,7 +34,7 @@ def main():
     # Manages Docker client and workspace cleanup
 ```
 
-#### 2. Core Daemon ([`daemon/daemon.py`](../components/directed/src/daemon/daemon.py))
+#### 2. Core Daemon ([`daemon/daemon.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py))
 
 **DirectedDaemon class** - Main orchestrator handling incoming fuzzing tasks:
 
@@ -50,16 +50,16 @@ class DirectedDaemon:
 
 #### 3. Module Organization
 
-- **[`modules/workspace.py`](../components/directed/src/modules/workspace.py)** - Workspace and repository management
-- **[`modules/fuzzer_runner.py`](../components/directed/src/modules/fuzzer_runner.py)** - AFL fuzzer orchestration and Docker management
-- **[`modules/patch_runner.py`](../components/directed/src/modules/patch_runner.py)** - Patch application and diff analysis
-- **[`modules/seed_syncer.py`](../components/directed/src/modules/seed_syncer.py)** - Seed corpus synchronization
-- **[`modules/crash_handler.py`](../components/directed/src/modules/crash_handler.py)** - Crash detection and processing
-- **[`modules/telemetry.py`](../components/directed/src/modules/telemetry.py)** - Distributed tracing and monitoring
+- **[`modules/workspace.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/workspace.py)** - Workspace and repository management
+- **[`modules/fuzzer_runner.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/fuzzer_runner.py)** - AFL fuzzer orchestration and Docker management
+- **[`modules/patch_runner.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/patch_runner.py)** - Patch application and diff analysis
+- **[`modules/seed_syncer.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/seed_syncer.py)** - Seed corpus synchronization
+- **[`modules/crash_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/crash_handler.py)** - Crash detection and processing
+- **[`modules/telemetry.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/telemetry.py)** - Distributed tracing and monitoring
 
 ## Message Format and Integration
 
-### Message Structure ([`directed_msg.py`](../components/directed/src/daemon/directed_msg.py))
+### Message Structure ([`directed_msg.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/directed_msg.py))
 
 ```python
 @dataclass
@@ -142,7 +142,7 @@ CRS_DIRECTED_QUEUE    # Incoming task queue name
 STORAGE_DIR           # Output artifact storage
 ```
 
-### Key Configuration ([`config/config.py`](../components/directed/src/config/config.py))
+### Key Configuration ([`config/config.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/config/config.py))
 
 ```python
 class Config:
@@ -153,11 +153,11 @@ class Config:
 
 ## Database Integration
 
-### Models ([`db/models/`](../components/directed/src/db/models/))
+### Models ([`db/models/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/db/models/))
 
-- **[`directed_slice.py`](../components/directed/src/db/models/directed_slice.py)** - SQLAlchemy model for slice result tracking
-- **[`fuzz_related.py`](../components/directed/src/db/models/fuzz_related.py)** - Seed and fuzzing artifact models
-- **[`base.py`](../components/directed/src/db/models/base.py)** - SQLAlchemy base configuration
+- **[`directed_slice.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/db/models/directed_slice.py)** - SQLAlchemy model for slice result tracking
+- **[`fuzz_related.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/db/models/fuzz_related.py)** - Seed and fuzzing artifact models
+- **[`base.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/db/models/base.py)** - SQLAlchemy base configuration
 
 ### Database Operations
 

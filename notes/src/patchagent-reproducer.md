@@ -35,7 +35,7 @@ Task (project-level container)
 
 ### Main Components
 
-#### 1. Task Discovery and Processing ([`reproduce.py:157-214`](../components/patchagent/reproducer/reproduce.py#L157-L214))
+#### 1. Task Discovery and Processing ([`reproduce.py:157-214`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/reproduce.py#L157-L214))
 
 ```python
 def reproduce_all_patches():
@@ -58,7 +58,7 @@ def reproduce_all_patches():
 - **Dynamic Builder Creation**: Creates OSS-Fuzz builders per task
 - **Combination Generation**: Uses `itertools.product()` to create all patch × bug profile combinations
 
-#### 2. Intelligent Edge Tracking ([`reproduce.py:42-66`](../components/patchagent/reproducer/reproduce.py#L42-L66))
+#### 2. Intelligent Edge Tracking ([`reproduce.py:42-66`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/reproduce.py#L42-L66))
 
 ```python
 already_built_edge = set()  # Global cache of (patch_id, bug_profile_id) pairs
@@ -81,7 +81,7 @@ def sync_already_built_edge():
 - **Redundant Work Prevention**: Avoids retesting already validated combinations
 - **Memory Efficiency**: Uses set-based lookups for O(1) edge checking
 
-#### 3. Hash-Based Build Workspace Management ([`reproduce.py:69-154`](../components/patchagent/reproducer/reproduce.py#L69-L154))
+#### 3. Hash-Based Build Workspace Management ([`reproduce.py:69-154`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/reproduce.py#L69-L154))
 
 ```python
 def batch_level_reproduce(bug_list: List[Bug], patch: Patch, builder: ReproBuilder):
@@ -106,7 +106,7 @@ def batch_level_reproduce(bug_list: List[Bug], patch: Patch, builder: ReproBuild
 - **Isolated Workspaces**: Each patch gets separate build environment
 - **Sanitizer-Specific Builds**: Different sanitizers create different build artifacts
 
-#### 4. Docker-Based PoC Replay ([`build_utils.py:308-374`](../components/patchagent/reproducer/build_utils.py#L308-L374))
+#### 4. Docker-Based PoC Replay ([`build_utils.py:308-374`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/build_utils.py#L308-L374))
 
 ```python
 def run_container(fuzz_tooling: str, project_name: str, poc_dir: Path, hash_key: str):
@@ -133,7 +133,7 @@ def replay_poc(fuzz_tooling: str, project_name: str, harness_binary: str, poc_di
 
 ### ReproBuilder: Extended OSS-Fuzz Integration
 
-#### Enhanced Builder Class ([`build_utils.py:44-195`](../components/patchagent/reproducer/build_utils.py#L44-L195))
+#### Enhanced Builder Class ([`build_utils.py:44-195`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/build_utils.py#L44-L195))
 
 ```python
 class ReproBuilder(OSSFuzzBuilder):
@@ -152,7 +152,7 @@ class ReproBuilder(OSSFuzzBuilder):
 - **Language Detection**: Automatically detects C/C++ vs Java projects from `project.yaml`
 - **Docker Integration**: Uses OSS-Fuzz's `infra/helper.py` build system
 
-#### Sanitizer Mapping ([`build_utils.py:32-41`](../components/patchagent/reproducer/build_utils.py#L32-L41))
+#### Sanitizer Mapping ([`build_utils.py:32-41`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/build_utils.py#L32-L41))
 
 ```python
 SANITIZER_MAP = {
@@ -179,7 +179,7 @@ CREATE TABLE patch_bugs (
 );
 ```
 
-#### Database Update Logic ([`reproduce.py:143-153`](../components/patchagent/reproducer/reproduce.py#L143-L153))
+#### Database Update Logic ([`reproduce.py:143-153`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/reproduce.py#L143-L153))
 
 ```python
 with make_session() as session:
@@ -227,7 +227,7 @@ if "No such container" in stdout + stderr or returncode == 137:
 
 ### Continuous Operation
 
-#### Main Loop ([`reproduce.py:212-214`](../components/patchagent/reproducer/reproduce.py#L212-L214))
+#### Main Loop ([`reproduce.py:212-214`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/reproducer/reproduce.py#L212-L214))
 ```python
 if __name__ == "__main__":
     while True:

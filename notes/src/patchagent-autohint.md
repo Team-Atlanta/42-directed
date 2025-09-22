@@ -8,7 +8,7 @@ The PatchAgent auto-hint system represents a **sophisticated language server int
 
 ### Location and Activation
 
-**Primary Implementation**: [`components/patchagent/patchagent/agent/clike/proxy/internal.py:43-68`](../components/patchagent/patchagent/agent/clike/proxy/internal.py#L43-L68)
+**Primary Implementation**: [`components/patchagent/patchagent/agent/clike/proxy/internal.py:43-68`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/internal.py#L43-L68)
 
 ```python
 def viewcode(task: PatchTask, _path: str, _start_line: int, _end_line: int, auto_hint: bool = False):
@@ -43,7 +43,7 @@ def viewcode(task: PatchTask, _path: str, _start_line: int, _end_line: int, auto
 
 ### Configuration Strategy
 
-**Agent Generator**: [`components/patchagent/patchagent/agent/generator.py:14-35`](../components/patchagent/patchagent/agent/generator.py#L14-L35)
+**Agent Generator**: [`components/patchagent/patchagent/agent/generator.py:14-35`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L14-L35)
 
 ```python
 # Fast mode: Random auto_hint selection
@@ -113,7 +113,7 @@ hint = task.builder.language_server.hover(path, line, column)
 
 ### Java Auto-Hint (Parameter Only)
 
-**Implementation Status**: [`components/patchagent/patchagent/agent/java/proxy/internal.py:15-34`](../components/patchagent/patchagent/agent/java/proxy/internal.py#L15-L34)
+**Implementation Status**: [`components/patchagent/patchagent/agent/java/proxy/internal.py:15-34`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/proxy/internal.py#L15-L34)
 
 ```python
 def viewcode(task: PatchTask, _path: str, _start_line: int, _end_line: int, auto_hint: bool = False):

@@ -6,7 +6,7 @@ This document provides a comprehensive analysis of the CRS Gateway implementatio
 
 The CRS (Cybersecurity Reasoning System) implements a **dual-gateway architecture**:
 
-1. **External API Gateway** ([`components/gateway`](../components/gateway/)): Handles external client requests and AIxCC competition API compliance
+1. **External API Gateway** ([`components/gateway`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/)): Handles external client requests and AIxCC competition API compliance
 2. **Internal Service APIs**: Scheduler exposes internal REST APIs for inter-service communication
 
 ## External API Gateway
@@ -33,7 +33,7 @@ The external gateway implements the **AIxCC competition API specification** and 
 
 #### 1. Main Entry Point
 
-**Source**: [`components/gateway/cmd/crs-gateway/main.go`](../components/gateway/cmd/crs-gateway/main.go#L34-L51)
+**Source**: [`components/gateway/cmd/crs-gateway/main.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/cmd/crs-gateway/main.go#L34-L51)
 
 ```go
 app := fx.New(
@@ -55,7 +55,7 @@ app := fx.New(
 
 #### 2. API Server Configuration
 
-**Source**: [`components/gateway/internal/server/server.go`](../components/gateway/internal/server/server.go#L44-L87)
+**Source**: [`components/gateway/internal/server/server.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/server/server.go#L44-L87)
 
 ```go
 func setupHandlers(api *operations.CrsGatewayAPI, p ServerParams) {
@@ -75,7 +75,7 @@ func setupHandlers(api *operations.CrsGatewayAPI, p ServerParams) {
 
 #### 3. Task Handling
 
-**Source**: [`components/gateway/internal/handlers/task_handler.go`](../components/gateway/internal/handlers/task_handler.go#L32-L47)
+**Source**: [`components/gateway/internal/handlers/task_handler.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/handlers/task_handler.go#L32-L47)
 
 ```go
 func (h *PostV1TskHandler) Handle(params task.PostV1TaskParams, principal any) middleware.Responder {
@@ -100,7 +100,7 @@ func (h *PostV1TskHandler) Handle(params task.PostV1TaskParams, principal any) m
 
 #### 1. Task Service
 
-**Source**: [`components/gateway/internal/services/task_service.go`](../components/gateway/internal/services/task_service.go#L21-L26)
+**Source**: [`components/gateway/internal/services/task_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/services/task_service.go#L21-L26)
 
 ```go
 type TaskService interface {
@@ -123,7 +123,7 @@ External Request → Task Handler → Task Service → Database → Task Records
 
 #### 2. Status Service
 
-**Source**: [`components/gateway/internal/services/status_service.go`](../components/gateway/internal/services/status_service.go#L36-L55)
+**Source**: [`components/gateway/internal/services/status_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/services/status_service.go#L36-L55)
 
 ```go
 func (s *StatusServiceImpl) GetTaskStatus() (map[db.TaskStatusEnum]int64, error) {
@@ -149,7 +149,7 @@ func (s *StatusServiceImpl) GetTaskStatus() (map[db.TaskStatusEnum]int64, error)
 
 #### 3. SARIF Service
 
-**Source**: [`components/gateway/internal/services/sarif_service.go`](../components/gateway/internal/services/sarif_service.go#L27-L35)
+**Source**: [`components/gateway/internal/services/sarif_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/services/sarif_service.go#L27-L35)
 
 ```go
 func (s *SarifServiceImpl) CreateSarif(sarif *models.TypesSARIFBroadcast, messageID string) error {
@@ -167,7 +167,7 @@ func (s *SarifServiceImpl) CreateSarif(sarif *models.TypesSARIFBroadcast, messag
 
 ### OpenAPI Specification
 
-**Source**: [`components/gateway/swagger/crs-swagger-v1.0.yaml`](../components/gateway/swagger/crs-swagger-v1.0.yaml#L219-L315)
+**Source**: [`components/gateway/swagger/crs-swagger-v1.0.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/swagger/crs-swagger-v1.0.yaml#L219-L315)
 
 The gateway exposes three main API endpoint groups:
 
@@ -187,7 +187,7 @@ The gateway exposes three main API endpoint groups:
 
 #### Task Request Model
 
-**Source**: [`components/gateway/swagger/crs-swagger-v1.0.yaml`](../components/gateway/swagger/crs-swagger-v1.0.yaml#L150-L215)
+**Source**: [`components/gateway/swagger/crs-swagger-v1.0.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/swagger/crs-swagger-v1.0.yaml#L150-L215)
 
 ```yaml
 types.TaskDetail:
@@ -234,7 +234,7 @@ types.SourceDetail:
 
 The scheduler exposes internal REST endpoints for service monitoring and coordination.
 
-**Source**: [`components/scheduler/internal/api/serve.go`](../components/scheduler/internal/api/serve.go#L24-L42)
+**Source**: [`components/scheduler/internal/api/serve.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/api/serve.go#L24-L42)
 
 ```go
 func NewAPIServer(params ServerParams) *http.Server {
@@ -263,7 +263,7 @@ func NewAPIServer(params ServerParams) *http.Server {
 
 #### 2. Queue Service
 
-**Source**: [`components/scheduler/internal/api/queue_service.go`](../components/scheduler/internal/api/queue_service.go#L22-L54)
+**Source**: [`components/scheduler/internal/api/queue_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/api/queue_service.go#L22-L54)
 
 ```go
 func (q *QueueService) GetQueueLength(queueName string) (int64, error) {
@@ -284,7 +284,7 @@ func (q *QueueService) GetQueueLength(queueName string) (int64, error) {
 
 #### 3. Harness Service
 
-**Source**: [`components/scheduler/internal/api/harness_service.go`](../components/scheduler/internal/api/harness_service.go#L35-L61)
+**Source**: [`components/scheduler/internal/api/harness_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/api/harness_service.go#L35-L61)
 
 ```go
 func (h *HarnessService) GetHarnessData() (*HarnessResponse, error) {
@@ -387,7 +387,7 @@ sequenceDiagram
 
 ### Basic Authentication
 
-**Source**: [`components/gateway/internal/server/auth.go`](../components/gateway/internal/server/auth.go)
+**Source**: [`components/gateway/internal/server/auth.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/server/auth.go)
 
 ```go
 func (a *Authenticator) BasicAuth(username, password string) (interface{}, error) {
@@ -398,7 +398,7 @@ func (a *Authenticator) BasicAuth(username, password string) (interface{}, error
 
 ### Request Tracking and Middleware
 
-**Source**: [`components/gateway/internal/middle/db_message.go`](../components/gateway/internal/middle/db_message.go)
+**Source**: [`components/gateway/internal/middle/db_message.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/middle/db_message.go)
 
 ```go
 func (m *DBLogMiddleware) Middleware(next http.Handler) http.Handler {
@@ -459,7 +459,7 @@ RABBITMQ_MANAGEMENT_ENDPOINT=http://rabbitmq-service:15672
 
 ### Gateway Error Handling
 
-**Source**: [`components/gateway/internal/handlers/error.go`](../components/gateway/internal/handlers/error.go)
+**Source**: [`components/gateway/internal/handlers/error.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/gateway/internal/handlers/error.go)
 
 ```go
 func RespondError(err error) middleware.Responder {

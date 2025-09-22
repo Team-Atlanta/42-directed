@@ -227,7 +227,7 @@ graph TB
 
 ## Detailed Component Analysis
 
-### 1. MCP Infrastructure ([`seedmcp.py#L38-54`](../components/seedgen/seedgen2/seedmcp.py#L38))
+### 1. MCP Infrastructure ([`seedmcp.py#L38-54`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L38))
 
 MCP Mode establishes a sophisticated multi-server architecture for code analysis:
 
@@ -240,7 +240,7 @@ MCP Mode establishes a sophisticated multi-server architecture for code analysis
 
 **Tree-sitter Server** (`mcp_server_tree_sitter`):
 - Performs AST (Abstract Syntax Tree) analysis
-- Configured via [`treesitter_config.yaml`](../components/seedgen/treesitter_config.yaml#L1):
+- Configured via [`treesitter_config.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/treesitter_config.yaml#L1):
   ```yaml
   cache:
     enabled: true
@@ -266,7 +266,7 @@ MCP Mode establishes a sophisticated multi-server architecture for code analysis
 - Manages subprocess lifecycle and communication
 - Aggregates tools from both servers for the LLM agent
 
-### 2. CodeAnalysisAgent ([`seedmcp.py#L32-146`](../components/seedgen/seedgen2/seedmcp.py#L32))
+### 2. CodeAnalysisAgent ([`seedmcp.py#L32-146`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L32))
 
 A specialized agent that performs deep code analysis using MCP tools:
 
@@ -281,7 +281,7 @@ self.agent = create_react_agent(
 # - plan: Code generation strategy
 ```
 
-**Analysis Process** ([`CODE_ANALYSIS_PROMPT`](../components/seedgen/seedgen2/graphs/mcpbot.py#L33)):
+**Analysis Process** ([`CODE_ANALYSIS_PROMPT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py#L33)):
 1. **Entry Point Identification**:
    - C/C++: `LLVMFuzzerTestOneInput`
    - Java/JVM: `fuzzerTestOneInput`
@@ -311,11 +311,11 @@ if diff_path:
     # Include patch context for targeted seed generation
 ```
 
-### 3. SeedMcpAgent Pipeline ([`seedmcp.py#L148-222`](../components/seedgen/seedgen2/seedmcp.py#L148))
+### 3. SeedMcpAgent Pipeline ([`seedmcp.py#L148-222`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L148))
 
 The main orchestrator that manages seed generation without dynamic analysis:
 
-#### Step 1: Deep Code Analysis ([`seedmcp.py#L180-187`](../components/seedgen/seedgen2/seedmcp.py#L180))
+#### Step 1: Deep Code Analysis ([`seedmcp.py#L180-187`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L180))
 ```python
 code_analysis_result = initial_code_analysis(
     CodeAnalysisAgent(self.harness_source, str(self.src_dir.absolute())),
@@ -331,7 +331,7 @@ code_analysis_result = initial_code_analysis(
 - Uses context model (`SeedGen2ContextModel`) for deeper understanding
 - Recursion limit of 30 for complex analysis tasks
 
-#### Step 2: Initial Script Generation ([`seedmcp.py#L190-192`](../components/seedgen/seedgen2/seedmcp.py#L190))
+#### Step 2: Initial Script Generation ([`seedmcp.py#L190-192`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L190))
 ```python
 current_result = generate_first_script(
     None,  # No SeedD daemon in MCP mode
@@ -346,7 +346,7 @@ current_result = generate_first_script(
 - Validates and executes to produce 100 seeds
 - Stores as `generator_0.py`
 
-#### Step 3: Structure Documentation ([`seedmcp.py#L193`](../components/seedgen/seedgen2/seedmcp.py#L193))
+#### Step 3: Structure Documentation ([`seedmcp.py#L193`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L193))
 ```python
 current_doc = update_doc_mini(self.harness_source, self.harness_binary)
 ```
@@ -355,7 +355,7 @@ current_doc = update_doc_mini(self.harness_source, self.harness_binary)
 - Creates test case requirements and edge cases
 - No dynamic coverage information available
 
-#### Step 4: Filetype Detection ([`seedmcp.py#L194-200`](../components/seedgen/seedgen2/seedmcp.py#L194))
+#### Step 4: Filetype Detection ([`seedmcp.py#L194-200`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L194))
 ```python
 filetype_result = get_filetype(
     harness_source_code=self.harness_source,
@@ -368,7 +368,7 @@ filetype_result = filetype_result.translate(str.maketrans('', '', "\"'`"))
 - Removes quotes and ticks from result string
 - Determines generation strategy based on format
 
-#### Step 5: Final Script Generation ([`seedmcp.py#L203-221`](../components/seedgen/seedgen2/seedmcp.py#L203))
+#### Step 5: Final Script Generation ([`seedmcp.py#L203-221`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L203))
 ```python
 if filetype_result == "unknown":
     # Simple alignment with documentation
@@ -389,7 +389,7 @@ else:
   - Harness source code
   - File format knowledge
 
-### 4. MCPbot Graph ([`mcpbot.py#L240-259`](../components/seedgen/seedgen2/graphs/mcpbot.py#L240))
+### 4. MCPbot Graph ([`mcpbot.py#L240-259`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py#L240))
 
 A specialized LangGraph workflow for MCP-based generation:
 
@@ -424,12 +424,12 @@ def build_generate_graph():
 
 MCP Mode implements two levels of parallelism:
 
-1. **Model-Level Parallelism** ([`task_handler.py#L464-470`](../components/seedgen/task_handler.py#L464)):
+1. **Model-Level Parallelism** ([`task_handler.py#L464-470`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L464)):
    - Multiple LLMs process same task: GPT-4.1, Claude-4-sonnet, O4-mini
    - Controlled by `GEN_MODEL_LIST` environment variable
    - Each model runs independently with same MCP infrastructure
 
-2. **Harness-Level Parallelism** ([`aixcc.py#L564-566`](../components/seedgen/infra/aixcc.py#L564)):
+2. **Harness-Level Parallelism** ([`aixcc.py#L564-566`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L564)):
    ```python
    with ThreadPoolExecutor(max_workers=len(harness_binaries)) as executor:
        futures = [executor.submit(process_harness, hb, context.get_current())
@@ -441,7 +441,7 @@ MCP Mode implements two levels of parallelism:
 
 ### 6. Output Storage and Distribution
 
-**Unique Feature - Direct Bug Triage** ([`aixcc.py#L541-554`](../components/seedgen/infra/aixcc.py#L541)):
+**Unique Feature - Direct Bug Triage** ([`aixcc.py#L541-554`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L541)):
 ```python
 if save_to_triage_func:
     sanitizers = []
@@ -524,7 +524,7 @@ ENABLE_MCP=1  # Enable MCP mode in task_handler.py
 GEN_MODEL_LIST="gpt-4o,claude-4-sonnet,o4-mini"  # Models to use
 ```
 
-**Tree-sitter Configuration** ([`treesitter_config.yaml`](../components/seedgen/treesitter_config.yaml)):
+**Tree-sitter Configuration** ([`treesitter_config.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/treesitter_config.yaml)):
 - Cache: 100MB with 5-minute TTL
 - Security: Excludes sensitive directories, limits file size
 - Languages: Pre-loads C and Java parsers
@@ -537,9 +537,9 @@ GEN_MODEL_LIST="gpt-4o,claude-4-sonnet,o4-mini"  # Models to use
 
 ## Implementation References
 
-- **Main Orchestrator**: [`run_mcp_mode()`](../components/seedgen/infra/aixcc.py#L461-593)
-- **Agent Implementation**: [`SeedMcpAgent`](../components/seedgen/seedgen2/seedmcp.py#L148-222)
-- **Code Analysis**: [`CodeAnalysisAgent`](../components/seedgen/seedgen2/seedmcp.py#L32-146)
-- **MCPbot Graph**: [`mcpbot.py`](../components/seedgen/seedgen2/graphs/mcpbot.py)
-- **Configuration**: [`treesitter_config.yaml`](../components/seedgen/treesitter_config.yaml)
-- **Deployment**: [`deployment.yaml#L63`](../deployment/crs-k8s/b3yond-crs/charts/seedgen/templates/deployment.yaml#L63)
+- **Main Orchestrator**: [`run_mcp_mode()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L461-593)
+- **Agent Implementation**: [`SeedMcpAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L148-222)
+- **Code Analysis**: [`CodeAnalysisAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L32-146)
+- **MCPbot Graph**: [`mcpbot.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py)
+- **Configuration**: [`treesitter_config.yaml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/treesitter_config.yaml)
+- **Deployment**: [`deployment.yaml#L63`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/seedgen/templates/deployment.yaml#L63)

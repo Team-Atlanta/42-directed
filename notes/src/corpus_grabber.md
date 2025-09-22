@@ -2,7 +2,7 @@
 
 The Corpus Grabber component is an intelligent fuzzing corpus acquisition system that provides initial test inputs by either reusing project-specific corpora or dynamically determining file types through LLM analysis. It bridges the gap between traditional corpus collection and intelligent corpus selection.
 
-**Main Workflow Entry Point**: [`components/corpusgrabber/task_handler.py`](../components/corpusgrabber/task_handler.py)
+**Main Workflow Entry Point**: [`components/corpusgrabber/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py)
 - Listens to RabbitMQ queue (`corpus_queue`) for incoming tasks
 - Processes tasks in parallel with configurable prefetch count
 - Orchestrates corpus acquisition, project compilation, and downstream distribution
@@ -105,15 +105,15 @@ The corpus grabber follows a sophisticated selection workflow with two distinct 
 
 ### Implementation Components
 
-- **Task Reception**: [`task_handler.py#L256-308`](../components/corpusgrabber/task_handler.py#L256)
-- **Archive Extraction**: [`task_handler.py#L38-61`](../components/corpusgrabber/task_handler.py#L38)
-- **Diff Application**: [`task_handler.py#L88-110`](../components/corpusgrabber/task_handler.py#L88)
-- **Corpus Acquisition**: [`grabber.py#L115-165`](../components/corpusgrabber/grabber.py#L115)
-- **Project Building**: [`infra/oss_fuzz.py#L116-154`](../components/corpusgrabber/infra/oss_fuzz.py#L116)
-- **Fuzzer Discovery**: [`infra/oss_fuzz.py#L50-113`](../components/corpusgrabber/infra/oss_fuzz.py#L50)
-- **Database Storage**: [`task_handler.py#L122-161`](../components/corpusgrabber/task_handler.py#L122)
-- **CMIN Distribution**: [`task_handler.py#L217-254`](../components/corpusgrabber/task_handler.py#L217)
-- **Bug Creation**: [`task_handler.py#L163-214`](../components/corpusgrabber/task_handler.py#L163)
+- **Task Reception**: [`task_handler.py#L256-308`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L256)
+- **Archive Extraction**: [`task_handler.py#L38-61`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L38)
+- **Diff Application**: [`task_handler.py#L88-110`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L88)
+- **Corpus Acquisition**: [`grabber.py#L115-165`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L115)
+- **Project Building**: [`infra/oss_fuzz.py#L116-154`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/infra/oss_fuzz.py#L116)
+- **Fuzzer Discovery**: [`infra/oss_fuzz.py#L50-113`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/infra/oss_fuzz.py#L50)
+- **Database Storage**: [`task_handler.py#L122-161`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L122)
+- **CMIN Distribution**: [`task_handler.py#L217-254`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L217)
+- **Bug Creation**: [`task_handler.py#L163-214`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/task_handler.py#L163)
 
 ## Corpus Selection Strategies
 
@@ -121,15 +121,15 @@ The corpus grabber follows a sophisticated selection workflow with two distinct 
 **Location**: `corpus/projects/<project_name>/`
 - **When Used**: Project directory exists in corpus collection
 - **Advantage**: Curated, project-optimized test inputs
-- **Implementation**: [`grabber.py#L123-128`](../components/corpusgrabber/grabber.py#L123)
+- **Implementation**: [`grabber.py#L123-128`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L123)
 
 ### 2. Filetype-Based Corpus (Fallback)
 **Location**: `corpus/extensions/<filetype>/`
 - **When Used**: No project-specific corpus available
 - **Process**:
-  1. Find harness functions in source code ([`grabber.py#L45-83`](../components/corpusgrabber/grabber.py#L45))
-  2. LLM analyzes harness to determine expected file types ([`agent/filetype.py#L34-54`](../components/corpusgrabber/agent/filetype.py#L34))
-  3. Collect corpus files from extension directories ([`grabber.py#L157-160`](../components/corpusgrabber/grabber.py#L157))
+  1. Find harness functions in source code ([`grabber.py#L45-83`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L45))
+  2. LLM analyzes harness to determine expected file types ([`agent/filetype.py#L34-54`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/agent/filetype.py#L34))
+  3. Collect corpus files from extension directories ([`grabber.py#L157-160`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L157))
 - **Supported Types**: All subdirectories under `corpus/extensions/`
 
 ## Corpus Data Pipeline
@@ -137,9 +137,9 @@ The corpus grabber follows a sophisticated selection workflow with two distinct 
 ### Corpus Collection (Pre-deployment)
 The corpus data is prepared through a multi-stage pipeline:
 
-1. **Gathering** ([`README.md#L4`](../components/corpusgrabber/README.md#L4)): Seeds collected from public sources via `corpus/PoC_crawler.py`
-2. **Classification by Magika** ([`README.md#L5`](../components/corpusgrabber/README.md#L5)): File type detection using Google's Magika tool
-3. **LLM Classification** ([`README.md#L6`](../components/corpusgrabber/README.md#L6)): Unknown files further classified by LLM
+1. **Gathering** ([`README.md#L4`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L4)): Seeds collected from public sources via `corpus/PoC_crawler.py`
+2. **Classification by Magika** ([`README.md#L5`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L5)): File type detection using Google's Magika tool
+3. **LLM Classification** ([`README.md#L6`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L6)): Unknown files further classified by LLM
 
 ### Harness Detection Logic
 
@@ -150,13 +150,13 @@ The component uses different detection methods based on language:
 | C/C++ | `LLVMFuzzerTestOneInput` | Binary executables in `build/out/<project>/` | Compiled binaries |
 | Java/JVM | `fuzzerTestOneInput` | Source files in `projects/<project>/` | Java source files |
 
-Implementation: [`infra/oss_fuzz.py#L66-102`](../components/corpusgrabber/infra/oss_fuzz.py#L66)
+Implementation: [`infra/oss_fuzz.py#L66-102`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/infra/oss_fuzz.py#L66)
 
 ## Integration Points
 
 ### Input Queue
 - **Queue Name**: `corpus_queue`
-- **Message Format**: [`README.md#L13-23`](../components/corpusgrabber/README.md#L13)
+- **Message Format**: [`README.md#L13-23`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L13)
 - **Prefetch Count**: Configurable via `PREFETCH_COUNT` env var (default: 15)
 
 ### Output Queues
@@ -203,7 +203,7 @@ create table bugs (
 3. **Language-Aware Processing**: Different strategies for C/C++ vs Java projects
 4. **Parallel Distribution**: Simultaneous CMIN and triage submission
 5. **Flat Corpus Structure**: All corpus files copied to single directory
-6. **Docker-in-Docker**: Enables project building within container ([`Dockerfile#L1`](../components/corpusgrabber/Dockerfile#L1))
+6. **Docker-in-Docker**: Enables project building within container ([`Dockerfile#L1`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/Dockerfile#L1))
 
 ## Telemetry and Monitoring
 
@@ -227,7 +227,7 @@ The component includes comprehensive telemetry:
 ## Downstream Integration
 
 ### With Bandfuzz Component
-The bandfuzz fuzzer component ([`components/bandfuzz/internal/corpus/grab.go`](../components/bandfuzz/internal/corpus/grab.go)) retrieves corpus through multiple grabbers in priority order:
+The bandfuzz fuzzer component ([`components/bandfuzz/internal/corpus/grab.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/corpus/grab.go)) retrieves corpus through multiple grabbers in priority order:
 1. LibCmin corpus (minimized)
 2. DB seed corpus (from corpus grabber)
 3. Cmin seeds

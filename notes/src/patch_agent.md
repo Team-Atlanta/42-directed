@@ -11,7 +11,7 @@ The PatchAgent is a CRS component for automated vulnerability patching that appe
 #### ✅ **Implemented Core Concepts**
 | Feature | Paper Description | AIxCC Implementation |
 |---------|------------------|---------------------|
-| **Language Server Integration** | LSP-based code analysis with clangd | ✅ Full LSP implementation: [`clangd.py`](../components/patchagent/patchagent/lsp/clangd.py), [`java.py`](../components/patchagent/patchagent/lsp/java.py) |
+| **Language Server Integration** | LSP-based code analysis with clangd | ✅ Full LSP implementation: [`clangd.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/lsp/clangd.py), [`java.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/lsp/java.py) |
 | **Multi-Language Support** | C/C++ and Java support | ✅ Implemented: C/C++ via clangd, Java via specialized agents |
 | **Sanitizer Report Parsing** | Multiple sanitizer types | ✅ Comprehensive: Address, Memory, Undefined, Leak, Jazzer sanitizers |
 | **Basic Tool APIs** | `viewcode`, `find_definition`, `validate` | ✅ Implemented as: `viewcode`, `locate`, `validate` |
@@ -45,7 +45,7 @@ for counterexample_num in [0, 3]:
 
 #### Tool API Implementation: Basic LSP Wrapper
 
-**Implemented Tools** ([`proxy/default.py`](../components/patchagent/patchagent/agent/clike/proxy/default.py)):
+**Implemented Tools** ([`proxy/default.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/default.py)):
 1. **`viewcode(path, start_line, end_line)`**: Code viewing with basic line expansion
 2. **`locate(symbol)`**: Symbol location using clangd/ctags
 3. **`validate(patch)`**: Patch validation via build + test
@@ -57,12 +57,12 @@ for counterexample_num in [0, 3]:
 
 #### Language Server Integration: Real LSP Implementation + AST Analysis
 
-**Implemented** ([`lsp/clangd.py`](../components/patchagent/patchagent/lsp/clangd.py)):
+**Implemented** ([`lsp/clangd.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/lsp/clangd.py)):
 - Full JSON-RPC communication with clangd
 - Standard LSP methods: `textDocument/definition`, `textDocument/hover`
 - Proper LSP lifecycle management (initialize, shutdown)
 
-**Tree-sitter Integration for Java** ([`lsp/java.py`](../components/patchagent/patchagent/lsp/java.py)):
+**Tree-sitter Integration for Java** ([`lsp/java.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/lsp/java.py)):
 ```python
 class TreeSitterJavaParser:
     def __init__(self, file_path: Path):
@@ -74,7 +74,7 @@ class TreeSitterJavaParser:
         method_declaration_query = self.parser_language.query("""(method_declaration) @func_decl""")
 ```
 
-**Clang AST Analysis for C/C++** ([`clike/proxy/internal.py`](../components/patchagent/patchagent/agent/clike/proxy/internal.py#L85-L97)):
+**Clang AST Analysis for C/C++** ([`clike/proxy/internal.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/internal.py#L85-L97)):
 ```python
 # Uses clang.cindex for precise symbol location
 index = clang.cindex.Index.create()
@@ -92,7 +92,7 @@ for token in tu.get_tokens(extent=tu.cursor.extent):
 
 #### Counterexample System: Basic Collection
 
-**Current Implementation** ([`clike/common.py`](../components/patchagent/patchagent/agent/clike/common.py#L115-L130)):
+**Current Implementation** ([`clike/common.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L115-L130)):
 ```python
 def get_counterexamples(self) -> str:
     counterexamples = []
@@ -112,7 +112,7 @@ def get_counterexamples(self) -> str:
 
 #### Sanitizer Support: Comprehensive Parser System
 
-**Implemented Parsers** ([`parser/`](../components/patchagent/patchagent/parser/)):
+**Implemented Parsers** ([`parser/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/)):
 - **AddressSanitizer**: Heap/stack overflow, use-after-free detection
 - **MemorySanitizer**: Uninitialized memory access
 - **UndefinedBehaviorSanitizer**: C/C++ undefined behavior

@@ -18,7 +18,7 @@ PrimeFuzz implements a message-driven architecture with multiple service compone
 
 ### Key Components
 
-#### 1. Workflow Engine ([workflow.py](../components/primefuzz/workflow.py))
+#### 1. Workflow Engine ([workflow.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/workflow.py))
 
 The main orchestrator implementing the `FuzzingWorkflow` class:
 
@@ -38,7 +38,7 @@ class FuzzingWorkflow:
 - Coordination with Java slicer for directed fuzzing
 - Background monitoring of slice results
 
-#### 2. Fuzzing Runner ([modules/fuzzing_runner.py](../components/primefuzz/modules/fuzzing_runner.py))
+#### 2. Fuzzing Runner ([modules/fuzzing_runner.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/fuzzing_runner.py))
 
 Core fuzzing execution engine:
 
@@ -58,7 +58,7 @@ class FuzzingRunner:
 - Crash triage and bug profile generation
 - Real-time metrics collection
 
-#### 3. Message Consumer ([modules/message_consumer.py](../components/primefuzz/modules/message_consumer.py))
+#### 3. Message Consumer ([modules/message_consumer.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/message_consumer.py))
 
 RabbitMQ integration for task processing:
 
@@ -73,7 +73,7 @@ class MessageConsumer:
         )
 ```
 
-#### 4. Redis Middleware ([modules/redis_middleware.py](../components/primefuzz/modules/redis_middleware.py))
+#### 4. Redis Middleware ([modules/redis_middleware.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/redis_middleware.py))
 
 Distributed state management and coordination:
 
@@ -92,7 +92,7 @@ class RedisMiddleware:
 - Metrics aggregation
 - Backup artifact coordination
 
-#### 5. File Manager ([modules/file_manager.py](../components/primefuzz/modules/file_manager.py))
+#### 5. File Manager ([modules/file_manager.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/file_manager.py))
 
 Source code and artifact management:
 
@@ -139,7 +139,7 @@ graph TD
 
 ## Configuration System
 
-Configuration through environment variables ([modules/config.py](../components/primefuzz/modules/config.py)):
+Configuration through environment variables ([modules/config.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/config.py)):
 
 ### Core Settings
 
@@ -207,7 +207,7 @@ Java fuzzing through Jazzer with security issue detection:
 
 ### Database Schema
 
-Task tracking ([db/db_manager.py](../components/primefuzz/db/db_manager.py)):
+Task tracking ([db/db_manager.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/db/db_manager.py)):
 
 ```sql
 Table "public.tasks"
@@ -226,7 +226,7 @@ Table "public.seeds"
 
 ### Crash Triage Integration
 
-Integrated crash analysis ([modules/triage.py](../components/primefuzz/modules/triage.py)):
+Integrated crash analysis ([modules/triage.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/modules/triage.py)):
 
 - **Sanitizer parsing**: AddressSanitizer, UBSan, etc.
 - **Bug profiling**: CWE classification and deduplication
@@ -235,7 +235,7 @@ Integrated crash analysis ([modules/triage.py](../components/primefuzz/modules/t
 
 ### Telemetry and Monitoring
 
-OpenTelemetry integration ([utils/telemetry.py](../components/primefuzz/utils/telemetry.py)):
+OpenTelemetry integration ([utils/telemetry.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/utils/telemetry.py)):
 
 - **Distributed tracing**: Cross-service request tracking
 - **Metrics collection**: Performance and resource usage
@@ -262,7 +262,7 @@ services:
 
 ### Kubernetes
 
-Production deployment ([prime-k8s-deployment.yaml](../components/primefuzz/prime-k8s-deployment.yaml)):
+Production deployment ([prime-k8s-deployment.yaml](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/prime-k8s-deployment.yaml)):
 
 - **Horizontal Pod Autoscaling**: Based on queue depth
 - **Resource limits**: CPU/memory constraints

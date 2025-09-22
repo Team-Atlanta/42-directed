@@ -8,7 +8,7 @@ A subtle but significant implementation choice in PatchAgent's counterexample sy
 
 ### Location and Code
 
-**File**: [`components/patchagent/patchagent/agent/clike/common.py:124`](../components/patchagent/patchagent/agent/clike/common.py#L124)
+**File**: [`components/patchagent/patchagent/agent/clike/common.py:124`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L124)
 
 ```python
 def get_counterexamples(self) -> str:
@@ -31,7 +31,7 @@ def get_counterexamples(self) -> str:
 
 ### Configuration Parameters
 
-**Agent Generator**: [`components/patchagent/patchagent/agent/generator.py:22-38`](../components/patchagent/patchagent/agent/generator.py#L22-L38)
+**Agent Generator**: [`components/patchagent/patchagent/agent/generator.py:22-38`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L22-L38)
 
 ```python
 # Fast mode: No counterexamples

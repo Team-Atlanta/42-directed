@@ -22,7 +22,7 @@ The **Scheduler** component is a Go-based task orchestration service that acts a
 
 ### Key Components
 
-#### 1. Main Entry Point ([`cmd/scheduler/main.go`](../components/scheduler/cmd/scheduler/main.go))
+#### 1. Main Entry Point ([`cmd/scheduler/main.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/cmd/scheduler/main.go))
 
 Uses Fx dependency injection framework:
 
@@ -41,13 +41,13 @@ func main() {
 }
 ```
 
-#### 2. Core Scheduler ([`internal/scheduler/scheduler.go`](../components/scheduler/internal/scheduler/scheduler.go))
+#### 2. Core Scheduler ([`internal/scheduler/scheduler.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/scheduler/scheduler.go))
 
 - Runs on 1-minute intervals with mutex protection against concurrent execution
 - Manages multiple `ScheduleRoutine` implementations
 - Graceful shutdown handling
 
-#### 3. Task Service ([`service/task_service.go`](../components/scheduler/service/task_service.go))
+#### 3. Task Service ([`service/task_service.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/service/task_service.go))
 
 **Key responsibilities**:
 
@@ -58,7 +58,7 @@ func main() {
 
 ## Data Models
 
-### Task Model ([`models/tasks.go`](../components/scheduler/models/tasks.go))
+### Task Model ([`models/tasks.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/models/tasks.go))
 
 ```go
 type Task struct {
@@ -80,7 +80,7 @@ type Source struct {
 
 ## Configuration System
 
-### Configuration Structure ([`config/config.go`](../components/scheduler/config/config.go))
+### Configuration Structure ([`config/config.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/config/config.go))
 
 ```go
 type AppConfig struct {

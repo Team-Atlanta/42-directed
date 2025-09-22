@@ -118,9 +118,9 @@ graph TB
     class DB,BUG_DB,PATCH_DB,SEEDS_DB storage
 ```
 
-1. **Fanout Architecture**: The scheduler broadcasts tasks to all relevant queues simultaneously ([`scheduler/internal/messaging/initializer.go#L41-49`](../components/scheduler/internal/messaging/initializer.go#L41)), enabling parallel processing across multiple components.
+1. **Fanout Architecture**: The scheduler broadcasts tasks to all relevant queues simultaneously ([`scheduler/internal/messaging/initializer.go#L41-49`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/messaging/initializer.go#L41)), enabling parallel processing across multiple components.
 
-2. **Priority Queuing**: Critical queues (`triage_queue` and `patch_queue`) support priority levels ([`initializer.go#L50-53`](../components/scheduler/internal/messaging/initializer.go#L50)) to ensure important bugs are processed first.
+2. **Priority Queuing**: Critical queues (`triage_queue` and `patch_queue`) support priority levels ([`initializer.go#L50-53`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/messaging/initializer.go#L50)) to ensure important bugs are processed first.
 
 # references
 

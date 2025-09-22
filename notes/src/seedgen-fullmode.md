@@ -250,7 +250,7 @@ graph TB
 
 ## Detailed Component Analysis
 
-### 1. Project Instrumentation ([`compile_project`](../components/seedgen/infra/aixcc.py#L141))
+### 1. Project Instrumentation ([`compile_project`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L141))
 
 The instrumentation phase transforms the original source code into a heavily instrumented version that can provide detailed runtime information.
 
@@ -283,29 +283,29 @@ ADD_ADDITIONAL_PASSES=SeedMindCFPass.so  # Add LLVM pass
 GENERATE_COMPILATION_DATABASE=1  # Create compile_commands.json
 ```
 
-### 2. SeedD Daemon ([`seedd`](../components/seedgen/seedd/))
+### 2. SeedD Daemon ([`seedd`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/))
 
 A Go-based gRPC service that provides dynamic analysis capabilities in an isolated Docker container.
 
 **Core Services:**
 
-1. **RunSeeds** ([`run_seeds.go`](../components/seedgen/seedd/internal/service/run_seeds.go))
+1. **RunSeeds** ([`run_seeds.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/internal/service/run_seeds.go))
    - Executes seeds against instrumented binary
    - Uses `getcov` tool for coverage collection
    - Returns coverage percentage and detailed report
    - Generates `.profdata` files for LLVM coverage tools
 
-2. **GetRegionSource** ([`get_region_source.go`](../components/seedgen/seedd/internal/service/get_region_source.go))
+2. **GetRegionSource** ([`get_region_source.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/internal/service/get_region_source.go))
    - Retrieves source code by file path and line/column ranges
    - Uses compilation database for accurate source mapping
    - Essential for understanding harness implementation
 
-3. **GetFunctions** ([`functions.go`](../components/seedgen/seedd/internal/service/functions.go))
+3. **GetFunctions** ([`functions.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/internal/service/functions.go))
    - Enumerates all functions in the instrumented binary
    - Provides metadata: file path, line numbers, signature
    - Identifies harness entry point (`LLVMFuzzerTestOneInput`)
 
-4. **GetCallGraph** ([`callgraph.go`](../components/seedgen/seedd/internal/service/callgraph.go))
+4. **GetCallGraph** ([`callgraph.go`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/internal/service/callgraph.go))
    - Builds function call relationships from runtime data
    - Identifies which functions call which others
    - Used for understanding code dependencies
@@ -315,7 +315,7 @@ A Go-based gRPC service that provides dynamic analysis capabilities in an isolat
    - Merges multiple `.profdata` files using `llvm-profdata`
    - Provides final coverage statistics
 
-### 3. SeedGenAgent Pipeline ([`seedgen.py`](../components/seedgen/seedgen2/seedgen.py))
+### 3. SeedGenAgent Pipeline ([`seedgen.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py))
 
 The core orchestrator that manages the **script evolution process** - a single Python generator script is progressively refined through multiple stages to achieve better coverage.
 
@@ -347,50 +347,50 @@ Script Evolution Pipeline:
 - Locates `LLVMFuzzerTestOneInput` as harness entry point
 - Retrieves complete harness source code via `GetRegionSource()`
 
-#### Step 2: Initial Script Generation ([`generate_first_script`](../components/seedgen/seedgen2/agents/glance.py) at [seedgen.py#L125](../components/seedgen/seedgen2/seedgen.py#L125))
+#### Step 2: Initial Script Generation ([`generate_first_script`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/glance.py) at [seedgen.py#L125](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L125))
 - Uses **Sowbot** graph (LangGraph-based workflow)
 - LLM analyzes harness code to understand input requirements
-- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py#L12)
+- Prompt: [`PROMPT_GENERATE_FIRST_SCRIPT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/glance.py#L12)
 - Generates the **FIRST Python script** that creates test inputs
 - Validates script syntax and executes to create 100 initial seeds
 - Stores as `generator_0.py`, seeds as `seed_0_0` to `seed_0_99`
 
-#### Step 3: Structure Documentation Creation ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L128](../components/seedgen/seedgen2/seedgen.py#L128))
+#### Step 3: Structure Documentation Creation ([`update_doc`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L128](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L128))
 - Analyzes coverage gaps from initial seeds
 - Uses `get_related_functions()` to find dependent code
-- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L26)
+- Prompt: [`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L26)
 - LLM generates documentation (NOT a script) describing:
   - Required input structure
   - Data field specifications
   - Edge cases for better coverage
 
-#### Step 4: Filetype-Based Script Replacement ([`_generate_filetype_seeds`](../components/seedgen/seedgen2/seedgen.py) at [seedgen.py#L132](../components/seedgen/seedgen2/seedgen.py#L132))
+#### Step 4: Filetype-Based Script Replacement ([`_generate_filetype_seeds`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py) at [seedgen.py#L132](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L132))
 - Identifies target file format (XML, JSON, binary, etc.)
-  - Prompt: [`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py#L11)
+  - Prompt: [`PROMPT_determine_file_type`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L11)
 - Generates a reference script with format-specific logic
-  - Prompt: [`PROMPT_reference`](../components/seedgen/seedgen2/agents/filetype.py#L24)
+  - Prompt: [`PROMPT_reference`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L24)
 - **REPLACES the original script** with filetype-aware version:
-  - Prompt: [`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py#L28)
+  - Prompt: [`PROMPT_generate`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L28)
   - **XML**: Proper tag structure, attributes, namespaces
   - **JSON**: Valid object/array structures, type constraints
   - **Binary**: Headers, magic bytes, checksums
 - Stores as `generator_1.py`, seeds as `seed_1_0` to `seed_1_99`
 
-#### Step 5: Documentation Enhancement ([`update_doc`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L136](../components/seedgen/seedgen2/seedgen.py#L136))
+#### Step 5: Documentation Enhancement ([`update_doc`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L136](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L136))
 - Analyzes coverage from the filetype-aware script
 - **Improves existing documentation** with new insights
-- Prompt: [`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L43)
+- Prompt: [`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L43)
 - Adds missing requirements discovered from filetype script execution
 
-#### Step 6: Final Script Alignment ([`align_script`](../components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L139](../components/seedgen/seedgen2/seedgen.py#L139))
+#### Step 6: Final Script Alignment ([`align_script`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py) at [seedgen.py#L139](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L139))
 - Uses **Sowbot** graph (not Plainbot as documentation might suggest)
 - **REPLACES the filetype script** with documentation-aligned version
-- Prompt: [`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py#L11)
+- Prompt: [`PROMPT_ALIGNMENT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L11)
 - Ensures script follows all documented requirements
 - Addresses remaining coverage gaps
 - Stores as `generator_2.py`, seeds as `seed_2_0` to `seed_2_99`
 
-#### Step 7: Coverage Aggregation ([`get_merged_coverage`](../components/seedgen/seedgen2/utils/seeds.py) at [seedgen.py#L143](../components/seedgen/seedgen2/seedgen.py#L143))
+#### Step 7: Coverage Aggregation ([`get_merged_coverage`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/utils/seeds.py) at [seedgen.py#L143](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L143))
 - Merges all `.profdata` files from all 300 seeds (3 scripts × 100 seeds each)
 - Uses `llvm-profdata merge` for aggregation
 - Calculates final coverage percentages
@@ -400,7 +400,7 @@ Script Evolution Pipeline:
 
 Full Mode uses two distinct LangGraph-based workflows for different purposes:
 
-##### **Sowbot** - Script Generation with Validation ([sowbot.py#L214-290](../components/seedgen/seedgen2/graphs/sowbot.py#L214))
+##### **Sowbot** - Script Generation with Validation ([sowbot.py#L214-290](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/sowbot.py#L214))
 **Purpose**: Generate, validate, and execute Python generator scripts
 
 **Graph Structure** (with error handling and retry):
@@ -422,11 +422,11 @@ graph_builder.add_edge("handle_error", "validate_script")  # Retry on error
 - Returns `SowbotResult` with script, seeds, and coverage feedback
 
 **Usage in Pipeline**:
-- Step 2: Initial script generation ([`PROMPT_GENERATE_FIRST_SCRIPT`](../components/seedgen/seedgen2/agents/glance.py#L12))
-- Step 4: Filetype-based script replacement ([`PROMPT_generate`](../components/seedgen/seedgen2/agents/filetype.py#L28))
-- Step 6: Final script alignment ([`PROMPT_ALIGNMENT`](../components/seedgen/seedgen2/agents/alignment.py#L11))
+- Step 2: Initial script generation ([`PROMPT_GENERATE_FIRST_SCRIPT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/glance.py#L12))
+- Step 4: Filetype-based script replacement ([`PROMPT_generate`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L28))
+- Step 6: Final script alignment ([`PROMPT_ALIGNMENT`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L11))
 
-##### **Plainbot** - Simple Text Generation ([plainbot.py#L41-75](../components/seedgen/seedgen2/graphs/plainbot.py#L41))
+##### **Plainbot** - Simple Text Generation ([plainbot.py#L41-75](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/plainbot.py#L41))
 **Purpose**: Generate plain text responses for documentation and analysis
 
 **Graph Structure** (simple linear flow):
@@ -442,9 +442,9 @@ graph_builder.add_edge('node_prompt', END)
 - Used for non-executable content generation
 
 **Usage in Pipeline**:
-- Step 3: Documentation generation ([`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L26))
-- Step 4: Filetype identification ([`PROMPT_determine_file_type`](../components/seedgen/seedgen2/agents/filetype.py#L11))
-- Step 5: Documentation improvement ([`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](../components/seedgen/seedgen2/agents/alignment.py#L43))
+- Step 3: Documentation generation ([`PROMPT_GENERATE_STRUCTURE_DOCUMENTATION`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L26))
+- Step 4: Filetype identification ([`PROMPT_determine_file_type`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L11))
+- Step 5: Documentation improvement ([`PROMPT_IMPROVE_STRUCTURE_DOCUMENTATION`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L43))
 
 **Key Difference**: Sowbot generates and validates executable code with coverage feedback, while Plainbot generates text/documentation without execution.
 
@@ -456,7 +456,7 @@ Full Mode implements three levels of parallelism:
 2. **Harness-Level**: Each harness processed independently via ThreadPoolExecutor
 3. **Seed-Level**: Multiple seeds executed concurrently for coverage analysis
 
-### 5. Coverage Collection Tool ([`getcov`](../components/seedgen/getcov/))
+### 5. Coverage Collection Tool ([`getcov`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/getcov/))
 
 A Rust-based tool that bridges instrumented binaries with coverage analysis:
 
@@ -521,8 +521,8 @@ getcov --hybrid -- /out/harness_binary seed_file
 
 ## Implementation References
 
-- Main orchestrator: [`run_full_mode()`](../components/seedgen/infra/aixcc.py#L595-751)
-- Agent implementation: [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py#L35-149)
-- SeedD daemon: [`/components/seedgen/seedd/`](../components/seedgen/seedd/)
-- Coverage tool: [`/components/seedgen/getcov/`](../components/seedgen/getcov/)
-- Instrumentation tools: [`/components/seedgen/prebuilt/`](../components/seedgen/prebuilt/)
+- Main orchestrator: [`run_full_mode()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L595-751)
+- Agent implementation: [`SeedGenAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L35-149)
+- SeedD daemon: [`/components/seedgen/seedd/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/)
+- Coverage tool: [`/components/seedgen/getcov/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/getcov/)
+- Instrumentation tools: [`/components/seedgen/prebuilt/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/prebuilt/)

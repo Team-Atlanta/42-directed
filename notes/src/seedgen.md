@@ -2,7 +2,7 @@
 
 The seedgen component is an LLM-powered seed generation system that creates initial fuzzing inputs to maximize code coverage. It implements a parallel processing architecture with **four distinct strategies** (three active, one unused):
 
-**Main Workflow Entry Point**: [`components/seedgen/task_handler.py`](../components/seedgen/task_handler.py)
+**Main Workflow Entry Point**: [`components/seedgen/task_handler.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py)
 - Listens to RabbitMQ queue (`seedgen_queue`) for incoming tasks
 - Processes tasks in parallel using multiple generative models (GPT-4.1, Claude-4-sonnet, O4-mini)
 - Orchestrates seed generation strategies based on environment variables
@@ -11,7 +11,7 @@ The seedgen component is an LLM-powered seed generation system that creates init
 
 **🔑 N.B. Seedgen operates as a ONE-TIME generation at task arrival, NOT continuous generation based on coverage feedback.**
 
-All four modes (Full, Mini, MCP, Codex) follow this same pattern ([task_handler.py#L143-207](../components/seedgen/task_handler.py#L143)):
+All four modes (Full, Mini, MCP, Codex) follow this same pattern ([task_handler.py#L143-207](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L143)):
 - Seeds are generated **once** when a new task arrives from the queue
 - No feedback loop from fuzzing back to seedgen
 - Fuzzing takes these initial seeds and mutates them independently
@@ -123,40 +123,40 @@ graph TB
 
 The seedgen component follows a multi-layered parallel processing workflow with three levels of parallelism:
 
-- **Task Reception and Distribution**: [`task_handler.py#L384-557`](../components/seedgen/task_handler.py#L384)
-- **Archive Extraction**: [`task_handler.py#L78-94`](../components/seedgen/task_handler.py#L78)
-- **Diff Application**: [`task_handler.py#L97-122`](../components/seedgen/task_handler.py#L97)
-- **Parallel Model Processing**: [`task_handler.py#L464-490`](../components/seedgen/task_handler.py#L464)
-- **Strategy Selection and Execution**: [`task_handler.py#L143-207`](../components/seedgen/task_handler.py#L143)
-- **Result Storage and Distribution**: [`task_handler.py#L246-290`](../components/seedgen/task_handler.py#L246)
-- **Error Handling and Retry Logic**: [`task_handler.py#L494-527`](../components/seedgen/task_handler.py#L494)
+- **Task Reception and Distribution**: [`task_handler.py#L384-557`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L384)
+- **Archive Extraction**: [`task_handler.py#L78-94`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L78)
+- **Diff Application**: [`task_handler.py#L97-122`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L97)
+- **Parallel Model Processing**: [`task_handler.py#L464-490`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L464)
+- **Strategy Selection and Execution**: [`task_handler.py#L143-207`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L143)
+- **Result Storage and Distribution**: [`task_handler.py#L246-290`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L246)
+- **Error Handling and Retry Logic**: [`task_handler.py#L494-527`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L494)
 
 ### Key Infrastructure Components
 
 The infrastructure components provide the underlying technical capabilities that enable specific parts of the workflow:
 
-**1. SeedD Service** ([`components/seedgen/seedd/`](../components/seedgen/seedd/)):
+**1. SeedD Service** ([`components/seedgen/seedd/`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedd/)):
 - **Purpose**: Go-based gRPC daemon that powers the Full Mode strategy's dynamic analysis capabilities
-- **Integration**: Started via Docker container at [`aixcc.py#L654-697`](../components/seedgen/infra/aixcc.py#L654)
+- **Integration**: Started via Docker container at [`aixcc.py#L654-697`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L654)
 - **Workflow Connection**: Enables the "Dynamic analysis" feature shown in the Full Mode box of the workflow
 - **Usage**: Each harness (H1, H2, HN) in Full Mode communicates with this daemon via gRPC for coverage collection and function enumeration
 - **Scope**: Only used by Full Mode; not needed for Mini, MCP, or Codex modes
 
-**2. Compilation Tools** (deployed at [`aixcc.py#L151-159`](../components/seedgen/infra/aixcc.py#L151)):
+**2. Compilation Tools** (deployed at [`aixcc.py#L151-159`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L151)):
 - **Purpose**: Custom instrumentation toolchain that enables Full Mode's code analysis
 - **Components**:
   - `clang-argus/clang-argus++`: Instrumented compiler wrappers replacing standard compilers
   - `bandld`: Custom linker for binary instrumentation
   - `libcallgraph_rt.a`: Runtime library for call graph generation
   - `SeedMindCFPass.so`: LLVM pass for control flow instrumentation
-- **Integration**: Deployed via [`compile_project()`](../components/seedgen/infra/aixcc.py#L151) before Full Mode execution
+- **Integration**: Deployed via [`compile_project()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L151) before Full Mode execution
 - **Workflow Connection**: Provides the "Instrumentation" capability mentioned in the Full Mode box
 - **Prerequisite**: Must instrument the code before SeedD can perform dynamic analysis
 
 **3. LiteLLM Proxy Integration**:
 - **Purpose**: Unified API interface that powers the parallel LLM model execution
-- **Configuration**: Set up via [`deployment.yaml:43-46`](../deployment.yaml:43) with multiple models
-- **Integration**: Used by [`task_handler.py:464-470`](../components/seedgen/task_handler.py:464) with ThreadPoolExecutor
+- **Configuration**: Set up via [`deployment.yaml:43-46`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment.yaml:43) with multiple models
+- **Integration**: Used by [`task_handler.py:464-470`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py:464) with ThreadPoolExecutor
 - **Workflow Connection**: Enables the "LLM Models (Parallel)" subgraph containing GPT-4.1, Claude-4-sonnet, and O4-mini
 - **Model Selection**: Controlled via `GEN_MODEL_LIST` environment variable and `SeedGen2GenerativeModel.set_custom_model()`
 
@@ -164,19 +164,19 @@ The infrastructure components provide the underlying technical capabilities that
 
 | Mode | Agent Class | Language Support | Compilation Required | Key Features | Coverage Feedback | Script Evolution | Infrastructure | Corpus Minimization | Deployment Status |
 |------|------------|-----------------|---------------------|--------------|-------------------|------------------|----------------|-------------------|------------------|
-| **[Full](./seedgen-fullmode.md)** | [`SeedGenAgent`](../components/seedgen/seedgen2/seedgen.py#L35) | C/C++ only | Yes (instrumented) | • Binary instrumentation with LLVM<br>• SeedD daemon for dynamic analysis<br>• Function call graph collection | Yes (via SeedD) | 3 iterations with refinement | Complex (SeedD, getcov, LLVM) | Always for C/C++ | Active |
-| **[Mini](./seedgen-minimode.md)** | [`SeedMiniAgent`](../components/seedgen/seedgen2/seedmini.py#L20) | All languages | No | • Lightweight harness-only analysis<br>• Docker-based seed execution<br>• Fastest execution time | No | Single generation | Simple (Docker only) | C/C++ only, skip for Java | Active (default) |
-| **[MCP](./seedgen-mcpmode.md)** | [`SeedMcpAgent`](../components/seedgen/seedgen2/seedmcp.py#L148) | All languages | No | • Tree-sitter AST analysis<br>• MCP filesystem access<br>• Direct bug triage submission | No (static only) | Single-pass with MCP context | MCP servers (Node.js/Python) | None (direct to triage) | **Enabled** ([`ENABLE_MCP=1`](../deployment.yaml#L64)) |
-| **[Codex](./seedgen-codexmode.md)** | [`SeedCodexAgent`](../components/seedgen/seedgen2/seedcodex.py#L16) | All languages | No | • Codexbot graph analysis<br>• Harness + codebase context<br>• Skips Claude models | No | Single generation | Codexbot graph | C/C++ only, skip for Java | **Unused** (needs `ENABLE_CODEX=1`) |
+| **[Full](./seedgen-fullmode.md)** | [`SeedGenAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedgen.py#L35) | C/C++ only | Yes (instrumented) | • Binary instrumentation with LLVM<br>• SeedD daemon for dynamic analysis<br>• Function call graph collection | Yes (via SeedD) | 3 iterations with refinement | Complex (SeedD, getcov, LLVM) | Always for C/C++ | Active |
+| **[Mini](./seedgen-minimode.md)** | [`SeedMiniAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmini.py#L20) | All languages | No | • Lightweight harness-only analysis<br>• Docker-based seed execution<br>• Fastest execution time | No | Single generation | Simple (Docker only) | C/C++ only, skip for Java | Active (default) |
+| **[MCP](./seedgen-mcpmode.md)** | [`SeedMcpAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L148) | All languages | No | • Tree-sitter AST analysis<br>• MCP filesystem access<br>• Direct bug triage submission | No (static only) | Single-pass with MCP context | MCP servers (Node.js/Python) | None (direct to triage) | **Enabled** ([`ENABLE_MCP=1`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment.yaml#L64)) |
+| **[Codex](./seedgen-codexmode.md)** | [`SeedCodexAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedcodex.py#L16) | All languages | No | • Codexbot graph analysis<br>• Harness + codebase context<br>• Skips Claude models | No | Single generation | Codexbot graph | C/C++ only, skip for Java | **Unused** (needs `ENABLE_CODEX=1`) |
 
 ### Implementation Entry Points
-- **Full Mode**: [`run_full_mode`](../components/seedgen/infra/aixcc.py#L595) (lines 595-751)
-- **Mini Mode**: [`run_mini_mode`](../components/seedgen/infra/aixcc.py#L340) (lines 340-459)  
-- **MCP Mode**: [`run_mcp_mode`](../components/seedgen/infra/aixcc.py#L461) (lines 461-593)
-- **Codex Mode**: [`run_codex_mode`](../components/seedgen/infra/aixcc.py#L754) (lines 754-876)
+- **Full Mode**: [`run_full_mode`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L595) (lines 595-751)
+- **Mini Mode**: [`run_mini_mode`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L340) (lines 340-459)  
+- **MCP Mode**: [`run_mcp_mode`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L461) (lines 461-593)
+- **Codex Mode**: [`run_codex_mode`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L754) (lines 754-876)
 
 ### Mode Selection Logic
-- Strategy selection: [`task_handler.py#L173-207`](../components/seedgen/task_handler.py#L173)
+- Strategy selection: [`task_handler.py#L173-207`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L173)
 - MCP and Codex are mutually exclusive
-- Java projects: Skip Full Mode ([`aixcc.py#L606-610`](../components/seedgen/infra/aixcc.py#L606))
-- Corpus minimization: Java projects skip in Mini/Codex modes ([`aixcc.py#L415`](../components/seedgen/infra/aixcc.py#L415), [`aixcc.py#L834`](../components/seedgen/infra/aixcc.py#L834))
+- Java projects: Skip Full Mode ([`aixcc.py#L606-610`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L606))
+- Corpus minimization: Java projects skip in Mini/Codex modes ([`aixcc.py#L415`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L415), [`aixcc.py#L834`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L834))

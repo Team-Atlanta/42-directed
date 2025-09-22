@@ -14,4 +14,4 @@ After we completing the discussion on one question, I'll ask you to summarize th
 - Summarize the understanding with only necessary information, with both high-level and low-level
 - No duplicate or redundant description, no overclaim, no exaggeration, keep the markdown well organized and the description simple and accurate
 - Keep updating the main roadmap `notes/readme.md` if needed
-- for the code location referenced in any markdown under `notes`, remember to use [xx](yy) format and use the actual relative path for yy so it is directly clickable when people viewing the markdown file such as in github. Besides, when referring to a specific code line in yy, it is of `relative-path#L123` format
+- for the code location referenced in any markdown under `notes`, remember to use [xx](yy) format and use the full GitHub URL for yy so it is directly clickable when people viewing the markdown file such as in github. The format should be `https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/path/to/file.py` for files and `https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/path/to/file.py#L123` for specific line references

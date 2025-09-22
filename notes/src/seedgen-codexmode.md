@@ -281,11 +281,11 @@ graph TB
 
 ## Detailed Component Analysis
 
-### 1. Model Filtering ([`run_codex_mode`](../components/seedgen/infra/aixcc.py#L754))
+### 1. Model Filtering ([`run_codex_mode`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L754))
 
 Codex Mode has specific model requirements due to its reliance on the external `codex` CLI tool:
 
-**Model Exclusion Logic** ([aixcc.py#L765-767](../components/seedgen/infra/aixcc.py#L765)):
+**Model Exclusion Logic** ([aixcc.py#L765-767](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L765)):
 ```python
 if "claude" in gen_model:
     return  # Skip Claude models - no Response API support
@@ -310,7 +310,7 @@ An external command-line tool that provides autonomous code analysis capabilitie
 - **Token Awareness**: Manages token limits when reading large files
 - **Multi-tool Capabilities**: Combines various analysis methods
 
-**Command Structure** ([codexbot.py#L108-115](../components/seedgen/seedgen2/graphs/codexbot.py#L108)):
+**Command Structure** ([codexbot.py#L108-115](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L108)):
 ```bash
 codex -q --approval-mode full-auto --model {model} "{prompt}"
 ```
@@ -320,17 +320,17 @@ codex -q --approval-mode full-auto --model {model} "{prompt}"
 - Runs in project directory for file access
 - Returns JSON-formatted responses
 
-### 3. SeedCodexAgent ([`seedcodex.py`](../components/seedgen/seedgen2/seedcodex.py))
+### 3. SeedCodexAgent ([`seedcodex.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedcodex.py))
 
 The orchestrator that manages the codex-based seed generation process:
 
-**Initialization** ([seedcodex.py#L19-38](../components/seedgen/seedgen2/seedcodex.py#L19)):
+**Initialization** ([seedcodex.py#L19-38](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedcodex.py#L19)):
 - Sets up result and shared directories
 - Configures seed generator store
 - Initializes tracking for audit logs
 - No SeedD daemon needed (unlike Full Mode)
 
-**Prompt Engineering** ([seedcodex.py#L46-60](../components/seedgen/seedgen2/seedcodex.py#L46)):
+**Prompt Engineering** ([seedcodex.py#L46-60](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedcodex.py#L46)):
 The agent constructs a comprehensive prompt that includes:
 
 1. **Context Setting**: Project name, harness binary name, and full harness source code
@@ -350,11 +350,11 @@ The agent constructs a comprehensive prompt that includes:
    - Register tree-sitter before use
    - Respect token limits when reading files
 
-### 4. Codexbot Workflow ([`codexbot.py`](../components/seedgen/seedgen2/graphs/codexbot.py))
+### 4. Codexbot Workflow ([`codexbot.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py))
 
 A LangGraph-based workflow that manages script generation and validation:
 
-#### Ultra-Thinking Mode ([codexbot.py#L28-34](../components/seedgen/seedgen2/graphs/codexbot.py#L28))
+#### Ultra-Thinking Mode ([codexbot.py#L28-34](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L28))
 
 An advanced reasoning mode that enhances analysis quality:
 - **Multi-perspective Analysis**: Explores even improbable angles
@@ -364,7 +364,7 @@ An advanced reasoning mode that enhances analysis quality:
 - **Weakness Search**: Deliberately looks for logical gaps
 - **Final Reflection**: Complete reasoning chain review
 
-#### Graph Structure ([codexbot.py#L227-246](../components/seedgen/seedgen2/graphs/codexbot.py#L227))
+#### Graph Structure ([codexbot.py#L227-246](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L227))
 
 ```python
 StateGraph nodes:
@@ -378,7 +378,7 @@ START → generate → validate_script →
   └─ [error] → handle_error → validate_script (retry)
 ```
 
-#### Script Extraction and Validation ([codexbot.py#L140-199](../components/seedgen/seedgen2/graphs/codexbot.py#L140))
+#### Script Extraction and Validation ([codexbot.py#L140-199](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L140))
 
 **Extraction Process:**
 - Uses regex to find Python code within triple backticks
@@ -431,24 +431,24 @@ START → generate → validate_script →
 
 ### 6. Key Design Decisions
 
-1. **Mutual Exclusivity with MCP**: Only one advanced analysis mode can be active ([task_handler.py#L173-207](../components/seedgen/task_handler.py#L173))
+1. **Mutual Exclusivity with MCP**: Only one advanced analysis mode can be active ([task_handler.py#L173-207](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L173))
    - Prevents resource conflicts
    - Simplifies debugging
    - Clear mode selection
 
-2. **No Coverage Measurement**: Unlike Full Mode, Codex Mode doesn't measure coverage ([codexbot.py#L313-317](../components/seedgen/seedgen2/graphs/codexbot.py#L313))
+2. **No Coverage Measurement**: Unlike Full Mode, Codex Mode doesn't measure coverage ([codexbot.py#L313-317](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L313))
    - No SeedD daemon integration
    - Focus on generation quality over metrics
    - Faster execution without overhead
 
-3. **High Seed Count**: Generates 400 seeds vs 100 in other modes ([codexbot.py#L182](../components/seedgen/seedgen2/graphs/codexbot.py#L182))
+3. **High Seed Count**: Generates 400 seeds vs 100 in other modes ([codexbot.py#L182](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L182))
    - Compensates for lack of coverage-guided refinement
    - Increases chance of finding vulnerabilities
    - Statistical approach to coverage
 
 4. **Corpus Minimization Strategy**: 
    - C/C++ projects: Seeds sent to `cmin_queue`
-   - Java projects: Skip minimization ([aixcc.py#L834](../components/seedgen/infra/aixcc.py#L834))
+   - Java projects: Skip minimization ([aixcc.py#L834](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L834))
 
 ### 7. Advantages of Codex Mode
 
@@ -470,11 +470,11 @@ START → generate → validate_script →
 
 ## Implementation References
 
-- Main orchestrator: [`run_codex_mode()`](../components/seedgen/infra/aixcc.py#L754-876)
-- Agent implementation: [`SeedCodexAgent`](../components/seedgen/seedgen2/seedcodex.py#L16-66)
-- Codexbot workflow: [`/components/seedgen/seedgen2/graphs/codexbot.py`](../components/seedgen/seedgen2/graphs/codexbot.py)
-- Task handler integration: [`task_handler.py#L191-205`](../components/seedgen/task_handler.py#L191)
-- Database schema: [`schema.sql#L19`](../components/db/schema.sql#L19) (includes 'seedcodex' in fuzzertypeenum)
+- Main orchestrator: [`run_codex_mode()`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L754-876)
+- Agent implementation: [`SeedCodexAgent`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedcodex.py#L16-66)
+- Codexbot workflow: [`/components/seedgen/seedgen2/graphs/codexbot.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py)
+- Task handler integration: [`task_handler.py#L191-205`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L191)
+- Database schema: [`schema.sql#L19`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/db/schema.sql#L19) (includes 'seedcodex' in fuzzertypeenum)
 
 ## Usage and Deployment
 

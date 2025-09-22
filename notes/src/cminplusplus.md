@@ -15,33 +15,33 @@ The component follows a **distributed microservices architecture** with two main
 
 ### 1. Controller Service
 
-**Location**: [`components/cminplusplus/controller`](../components/cminplusplus/controller)
+**Location**: [`components/cminplusplus/controller`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller)
 
 Message queue consumer that processes corpus minimization requests:
 
 **Core Files**:
-- **[`app.py`](../components/cminplusplus/controller/app.py#L14)**: Main entry point, sets up message queue consumption and Redis connections
-- **[`tasks.py`](../components/cminplusplus/controller/tasks.py#L70)**: Core task processing logic with `on_message_wrapper()` function
-- **[`executor.py`](../components/cminplusplus/controller/executor.py#L4)**: Async subprocess execution utilities
-- **[`mq.py`](../components/cminplusplus/controller/mq.py#L5)**: RabbitMQ message queue wrapper using aio_pika
+- **[`app.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller/app.py#L14)**: Main entry point, sets up message queue consumption and Redis connections
+- **[`tasks.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller/tasks.py#L70)**: Core task processing logic with `on_message_wrapper()` function
+- **[`executor.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller/executor.py#L4)**: Async subprocess execution utilities
+- **[`mq.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller/mq.py#L5)**: RabbitMQ message queue wrapper using aio_pika
 
 **Key Implementation**:
 - Consumes from `cmin_queue` RabbitMQ queue
 - Processes messages containing `{task_id, harness, seeds}`
-- Uses modified LibFuzzer with [`-generate_hash=1` flag](../components/cminplusplus/controller/tasks.py#L155) for coverage analysis
+- Uses modified LibFuzzer with [`-generate_hash=1` flag](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/controller/tasks.py#L155) for coverage analysis
 - Extracts seed files from tar.gz archives and runs coverage analysis
 - Stores results in Redis with keys like `clustercmin:file:{task_id}:{harness}:{feature}`
 
 ### 2. Calculator Service
 
-**Location**: [`components/cminplusplus/calculator`](../components/cminplusplus/calculator)
+**Location**: [`components/cminplusplus/calculator`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/calculator)
 
 HTTP API service that provides fast access to minimized corpora:
 
 **Core Files**:
-- **[`app.py`](../components/cminplusplus/calculator/app.py#L12)**: aiohttp web server with `/cmin/{task}/{harness}` endpoint
-- **[`cmin.py`](../components/cminplusplus/calculator/cmin.py#L13)**: Core business logic with multi-level caching
-- **[`rio.py`](../components/cminplusplus/calculator/rio.py#L3)**: Redis abstraction layer with sentinel support
+- **[`app.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/calculator/app.py#L12)**: aiohttp web server with `/cmin/{task}/{harness}` endpoint
+- **[`cmin.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/calculator/cmin.py#L13)**: Core business logic with multi-level caching
+- **[`rio.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/calculator/rio.py#L3)**: Redis abstraction layer with sentinel support
 
 **Key Features**:
 - **Multi-level caching strategy**:
@@ -55,13 +55,13 @@ HTTP API service that provides fast access to minimized corpora:
 
 ### Modified LibFuzzer
 
-**Location**: [`components/cminplusplus/libfuzzer`](../components/cminplusplus/libfuzzer)
+**Location**: [`components/cminplusplus/libfuzzer`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/libfuzzer)
 
 Custom LLVM LibFuzzer modifications for coverage-based corpus minimization:
 
 **Key Modifications**:
-- **[`FuzzerDriver.cpp#L885-932`](../components/cminplusplus/libfuzzer/FuzzerDriver.cpp#L885)**: Added `generate_hash` mode for coverage analysis
-- **[`FuzzerFlags.def#L214`](../components/cminplusplus/libfuzzer/FuzzerFlags.def#L214)**: New `generate_hash` flag
+- **[`FuzzerDriver.cpp#L885-932`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/libfuzzer/FuzzerDriver.cpp#L885)**: Added `generate_hash` mode for coverage analysis
+- **[`FuzzerFlags.def#L214`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/libfuzzer/FuzzerFlags.def#L214)**: New `generate_hash` flag
 - **Custom output format**: `clustercmin:{feature}:{filename}` for parsing by controller
 
 ### Coverage Analysis Process
@@ -93,7 +93,7 @@ graph TD
     F --> I
 ```
 
-**Upstream**: [SeedGen component](../components/seedgen/task_handler.py#L345) sends tasks to `cmin_queue`:
+**Upstream**: [SeedGen component](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L345) sends tasks to `cmin_queue`:
 
 ```python
 def send_to_cmin_queue(connection, task, harness_name, seed_path):
@@ -131,7 +131,7 @@ CACHE_TIMEOUT            # Cache expiration time
 
 ### Deployment Configuration
 
-**Kubernetes Deployment**: [`deployment/crs-k8s/b3yond-crs/charts/libcmin`](../deployment/crs-k8s/b3yond-crs/charts/libcmin)
+**Kubernetes Deployment**: [`deployment/crs-k8s/b3yond-crs/charts/libcmin`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/libcmin)
 
 - **Controller**: Consumes from RabbitMQ queue `cmin_queue`
 - **Calculator**: Exposes HTTP service as `b3yond-libcmin`

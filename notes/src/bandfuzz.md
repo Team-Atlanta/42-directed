@@ -20,21 +20,21 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
 ### Core Components
 
 #### Main Entry Point
-- **Location**: [cmd/b3fuzz/main.go](../components/bandfuzz/cmd/b3fuzz/main.go)
+- **Location**: [cmd/b3fuzz/main.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/cmd/b3fuzz/main.go)
 - Uses dependency injection framework (go.uber.org/fx) to wire components
 - Sets up ASLR configuration (`vm.mmap_rnd_bits=28`) for ASAN compatibility
 - Integrates PostgreSQL, RabbitMQ, Redis, and OpenTelemetry for telemetry
 
 #### Fuzzlet Concept
-- **Location**: [internal/types/fuzzlet.go](../components/bandfuzz/internal/types/fuzzlet.go#L4-L10)
+- **Location**: [internal/types/fuzzlet.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/types/fuzzlet.go#L4-L10)
 - Core abstraction: small, self-contained fuzzing unit
 - Contains: `TaskId`, `Harness`, `Sanitizer`, `FuzzEngine`, `ArtifactPath`
 - Represents a single fuzzing job targeting a specific harness with specific configuration
 
 #### Scheduler System
-- **Main Logic**: [internal/scheduler/scheduler.go](../components/bandfuzz/internal/scheduler/scheduler.go)
-- **Picker Logic**: [internal/scheduler/pick.go](../components/bandfuzz/internal/scheduler/pick.go)
-- **Scoring Factors**: [internal/scheduler/simpleFactors.go](../components/bandfuzz/internal/scheduler/simpleFactors.go)
+- **Main Logic**: [internal/scheduler/scheduler.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/scheduler.go)
+- **Picker Logic**: [internal/scheduler/pick.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/pick.go)
+- **Scoring Factors**: [internal/scheduler/simpleFactors.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go)
 
 **Scheduling Algorithm**:
 1. Retrieves available fuzzlets from Redis
@@ -54,7 +54,7 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
 5. Runs fuzzing with configurable timeout intervals
 
 #### Seed Management System
-- **Main Implementation**: [internal/seeds/seeds.go](../components/bandfuzz/internal/seeds/seeds.go)
+- **Main Implementation**: [internal/seeds/seeds.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/seeds/seeds.go)
 - **Architecture**: Fan-in pattern with batched processing
 - **Storage Location**: `/crs/b3fuzz/seeds/` directory
 
@@ -73,23 +73,23 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
 5. **Concurrency**: Processes multiple harness groups in parallel with goroutines
 
 #### Fuzzer Engine Support
-- **Architecture**: Pluggable fuzzer interface via [internal/fuzz/type.go](../components/bandfuzz/internal/fuzz/type.go)
+- **Architecture**: Pluggable fuzzer interface via [internal/fuzz/type.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/fuzz/type.go)
 - **Supported Engines**: **AFL++ family only**
   - `afl`: Standard AFL fuzzing
   - `aflpp`: AFL++ with advanced features
   - `directed`: Directed fuzzing mode
-- **LibFuzzer**: Exists as stub ([libfuzzer.go](../components/bandfuzz/internal/fuzz/libfuzzer.go#L11)) but **NOT implemented**
+- **LibFuzzer**: Exists as stub ([libfuzzer.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/fuzz/libfuzzer.go#L11)) but **NOT implemented**
   - Returns `nil` and "libfuzzer is not supported yet" error
   - Exists only for dependency injection testing
 
 #### AFL++ Integration
-- **Main Implementation**: [internal/fuzz/aflpp/aflpp.go](../components/bandfuzz/internal/fuzz/aflpp/aflpp.go)
+- **Main Implementation**: [internal/fuzz/aflpp/aflpp.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/fuzz/aflpp/aflpp.go)
 - **Multi-core Orchestration**: Runs one master instance + (core_count-1) slave instances
 - **Local Optimization**: Copies harness binaries to local temp directories for reduced I/O latency
 - **Crash/Seed Monitoring**: Uses file system watchers to detect new crashes and seeds
 
 #### Corpus Management
-- **Interface**: [internal/corpus/corpus.go](../components/bandfuzz/internal/corpus/corpus.go)
+- **Interface**: [internal/corpus/corpus.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/corpus/corpus.go)
 - Multiple seed grabbing strategies:
   - CminSeedGrabber: Corpus minimization
   - RandomSeedGrabber: Random seed selection
@@ -97,14 +97,14 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
   - LibCminCorpusGrabber: Library-based corpus minimization
 
 #### Fuzz Runner
-- **Location**: [internal/fuzz/fuzz.go](../components/bandfuzz/internal/fuzz/fuzz.go#L71-L152)
+- **Location**: [internal/fuzz/fuzz.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/fuzz/fuzz.go#L71-L152)
 - Orchestrates fuzzing execution with telemetry
 - Manages crash and seed routing to appropriate managers
 - Handles timeout and context management
 - Stores task metadata and trace context in Redis
 
 ### Configuration
-- **Location**: [config/config.go](../components/bandfuzz/config/config.go)
+- **Location**: [config/config.go](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/config/config.go)
 - Environment-based configuration for database, message queue, Redis connections
 - Scheduler configuration: interval timing and batch sizes
 - Core count for parallel fuzzing instances
@@ -112,7 +112,7 @@ BandFuzz is a collaborative fuzzing framework designed for large-scale parallel 
 ## Deployment Integration
 
 The implementation is integrated into the larger CRS system through Kubernetes deployment:
-- **Chart Location**: [deployment/crs-k8s/b3yond-crs/charts/bandfuzz/](../deployment/crs-k8s/b3yond-crs/charts/bandfuzz/)
+- **Chart Location**: [deployment/crs-k8s/b3yond-crs/charts/bandfuzz/](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/bandfuzz/)
 - Configured through values files for different environments (dev/test/prod)
 
 ## Evolution Timeline

@@ -21,7 +21,7 @@ The **Prime-Build** component is a job queue system for building OSS-Fuzz projec
 
 ### Key Components
 
-#### 1. Main Entry Point ([`run_build_job.py`](../components/prime-build/run_build_job.py))
+#### 1. Main Entry Point ([`run_build_job.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/prime-build/run_build_job.py))
 
 Standalone script to run and monitor build jobs:
 
@@ -32,7 +32,7 @@ def main():
     # Provides logging and telemetry integration
 ```
 
-#### 2. Core Application ([`primebuilder/main.py`](../components/prime-build/primebuilder/main.py))
+#### 2. Core Application ([`primebuilder/main.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/prime-build/primebuilder/main.py))
 
 Main application with CLI interface using Typer:
 
@@ -44,7 +44,7 @@ def build(task_id: str, src_path: str, oss_fuzz_path: str):
     # Handles error recovery and cleanup
 ```
 
-#### 3. Worker Implementation ([`primebuilder/worker.py`](../components/prime-build/primebuilder/worker.py))
+#### 3. Worker Implementation ([`primebuilder/worker.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/prime-build/primebuilder/worker.py))
 
 Contains all build step implementations:
 
@@ -133,7 +133,7 @@ def copy_artifact(self, task_id, project_name):
 
 ## Configuration System
 
-### Configuration Structure ([`primebuilder/config.py`](../components/prime-build/primebuilder/config.py))
+### Configuration Structure ([`primebuilder/config.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/prime-build/primebuilder/config.py))
 
 ```python
 class BuildConfig:

@@ -10,11 +10,11 @@ The PatchAgent system uses carefully crafted prompts to guide LLMs in automated 
 
 The system uses separate prompt templates for different target languages:
 
-**C/C++ Prompts** ([`clike/prompt.py`](../components/patchagent/patchagent/agent/clike/prompt.py)):
+**C/C++ Prompts** ([`clike/prompt.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py)):
 - `CLIKE_SYSTEM_PROMPT_TEMPLATE`: Core instructions for C/C++ vulnerability patching
 - `CLIKE_USER_PROMPT_TEMPLATE`: Task-specific user message with AddressSanitizer reports
 
-**Java Prompts** ([`java/prompt.py`](../components/patchagent/patchagent/agent/java/prompt.py)):
+**Java Prompts** ([`java/prompt.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/prompt.py)):
 - `JAVA_SYSTEM_PROMPT_TEMPLATE`: Core instructions for Java vulnerability patching
 - `JAVA_USER_PROMPT_TEMPLATE`: Task-specific user message with Jazzer reports
 
@@ -191,7 +191,7 @@ This enables the basic counterexample system where failed patches are included a
 
 ### Current Parameters Affecting Prompt Behavior
 
-From [`generator.py`](../components/patchagent/patchagent/agent/generator.py):
+From [`generator.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py):
 - **Temperature**: `[0, 0.3, 0.7, 1]` - Controls response randomness
 - **Auto-hint**: `[True, False]` - Enables automatic symbol resolution hints
 - **Counterexample Number**: `[0, 3]` - Number of failed patches to include

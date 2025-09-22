@@ -22,7 +22,7 @@ The component follows a **microservice architecture** with:
 
 ### Integration Points
 
-**Input**: Receives [`SliceMsg`](../components/slice/src/daemon/slice_msg.py#L5) messages containing:
+**Input**: Receives [`SliceMsg`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/slice_msg.py#L5) messages containing:
 - Project repositories (as tar archives)
 - Fuzzing tooling (OSS-Fuzz infrastructure)
 - Target functions to slice
@@ -34,11 +34,11 @@ The component follows a **microservice architecture** with:
 
 ### 1. Core Entry Points
 
-- **[`src/app.py`](../components/slice/src/app.py)**: Main application entry point that initializes the daemon
-- **[`entrypoint.sh`](../components/slice/entrypoint.sh)**: Docker container startup script that loads base-builder image
-- **[`slice.py`](../components/slice/slice.py)**: LLVM analysis script executed inside project containers
+- **[`src/app.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/app.py)**: Main application entry point that initializes the daemon
+- **[`entrypoint.sh`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/entrypoint.sh)**: Docker container startup script that loads base-builder image
+- **[`slice.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/slice.py)**: LLVM analysis script executed inside project containers
 
-### 2. SliceDaemon ([`src/daemon/daemon.py`](../components/slice/src/daemon/daemon.py))
+### 2. SliceDaemon ([`src/daemon/daemon.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/daemon.py))
 
 Main message processing daemon:
 
@@ -54,7 +54,7 @@ class SliceDaemon:
         # Creates fallback results for failed analyses
 ```
 
-### 3. SliceRunner ([`src/daemon/modules/slicerunner.py`](../components/slice/src/daemon/modules/slicerunner.py))
+### 3. SliceRunner ([`src/daemon/modules/slicerunner.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/modules/slicerunner.py))
 
 Manages Docker-based slice execution for each fuzzer harness:
 
@@ -78,7 +78,7 @@ for harness_name, harness_dir in harness_dirs.items():
 self.merge_slice_results()
 ```
 
-### 4. WorkspaceManager ([`src/daemon/modules/workspace.py`](../components/slice/src/daemon/modules/workspace.py))
+### 4. WorkspaceManager ([`src/daemon/modules/workspace.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/modules/workspace.py))
 
 Manages isolated workspaces for each slice task:
 
@@ -89,7 +89,7 @@ Manages isolated workspaces for each slice task:
 
 ## LLVM Analysis Implementation
 
-### Core Analysis Script ([`slice.py`](../components/slice/slice.py))
+### Core Analysis Script ([`slice.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/slice.py))
 
 ```python
 # Key steps in slice analysis:
@@ -123,7 +123,7 @@ analyzer_cmd.extend(found_files)  # All .bc files
 - **RabbitMQ**: Message queue for task distribution
 - **PostgreSQL**: Result storage database
 
-### Key Dependencies ([`Dockerfile`](../components/slice/Dockerfile))
+### Key Dependencies ([`Dockerfile`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/Dockerfile))
 
 ```dockerfile
 # LLVM toolchain

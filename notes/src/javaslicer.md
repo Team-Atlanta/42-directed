@@ -22,7 +22,7 @@ The **JavaSlicer** component is a Java-based static analysis service that perfor
 
 ### Key Components
 
-#### 1. Main Service ([`SliceTaskProcessor.java`](../components/javaslicer/src/main/java/org/b3yond/SliceTaskProcessor.java))
+#### 1. Main Service ([`SliceTaskProcessor.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/SliceTaskProcessor.java))
 
 Main service orchestrator:
 
@@ -42,7 +42,7 @@ public class SliceTaskProcessor {
 }
 ```
 
-#### 2. Core Slicing Engine ([`SliceCmdGenerator.java`](../components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java))
+#### 2. Core Slicing Engine ([`SliceCmdGenerator.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java))
 
 Core slicing logic:
 
@@ -54,7 +54,7 @@ Core slicing logic:
   - `.instrumentation_includes.txt`: Filtered class patterns with `.**` suffix
   - `.filtered_classes.txt`: Classes after exclusion filtering
 
-#### 3. Task Model ([`model/Task.java`](../components/javaslicer/src/main/java/org/b3yond/model/Task.java))
+#### 3. Task Model ([`model/Task.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/model/Task.java))
 
 ```java
 public class Task {
@@ -68,7 +68,7 @@ public class Task {
 }
 ```
 
-#### 4. Redis Service ([`service/RedisService.java`](../components/javaslicer/src/main/java/org/b3yond/service/RedisService.java))
+#### 4. Redis Service ([`service/RedisService.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/service/RedisService.java))
 
 Redis integration for task coordination:
 
@@ -109,7 +109,7 @@ graph TD
 
 ## Diff Parser Implementation
 
-### Diff Analysis ([`utils/DiffParser.java`](../components/javaslicer/src/main/java/org/b3yond/utils/DiffParser.java))
+### Diff Analysis ([`utils/DiffParser.java`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/utils/DiffParser.java))
 
 ```java
 public class DiffParser {
@@ -141,7 +141,7 @@ MAX_CONCURRENT_TASKS=4           # Parallel processing limit
 
 ### Maven Configuration
 
-Key dependencies in [`pom.xml`](../components/javaslicer/pom.xml):
+Key dependencies in [`pom.xml`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/pom.xml):
 
 ```xml
 <dependencies>

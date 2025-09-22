@@ -22,7 +22,7 @@ The **Submitter** component handles automated submission of discovered vulnerabi
 
 ### Key Components
 
-#### 1. Main Application ([`app.py`](../components/submitter/app.py))
+#### 1. Main Application ([`app.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/submitter/app.py))
 
 Async main application orchestrating all workers:
 
@@ -39,7 +39,7 @@ async def main():
     )
 ```
 
-#### 2. Worker Logic ([`workers.py`](../components/submitter/workers.py))
+#### 2. Worker Logic ([`workers.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/submitter/workers.py))
 
 Core worker implementations for each stage:
 
@@ -61,7 +61,7 @@ class SubmissionWorker:
         # Creates bundled POV+patch submissions
 ```
 
-#### 3. Submission Logic ([`submission.py`](../components/submitter/submission.py))
+#### 3. Submission Logic ([`submission.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/submitter/submission.py))
 
 HTTP submission and confirmation handlers:
 
@@ -169,7 +169,7 @@ async def bundle_worker():
 
 ## Database Integration
 
-### Models ([`db.py`](../components/submitter/db.py))
+### Models ([`db.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/submitter/db.py))
 
 SQLAlchemy models for submission tracking:
 
