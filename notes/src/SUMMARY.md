@@ -30,6 +30,7 @@
 
 - [Patch Generation](./patch_agent.md)
   - [PatchAgent Prompts](./patchagent-prompts.md)
+  - [PatchAgent Reproducer](./patchagent-reproducer.md)
 
 - [SARIF Processing](./sarif.md)
 
