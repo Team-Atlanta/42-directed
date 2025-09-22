@@ -6,10 +6,10 @@ import traceback
 
 class SkipTaskException(Exception):
     """Exception raised when a task should be skipped intentionally.
-    
+
     This exception indicates that the task should be skipped without treating it as an error,
     and the daemon should continue processing other tasks.
-    
+
     Attributes:
         task_id (str): ID of the task being skipped
         reason (str): Reason for skipping the task
@@ -56,7 +56,7 @@ class MsgQueue:
         else:
             logging.error('Channel is closed, cannot acknowledge message')
             # then do what?
-    
+
     def _callback_wrapper(self, callback):
         # we need functional programming here!
         # callback: (channel, method, properties, body) -> None
@@ -70,13 +70,13 @@ class MsgQueue:
                     logging.info(f"Skipping task: {e.reason}")
                     cb = functools.partial(self._ack_message, ch, method.delivery_tag)
                     connection.add_callback_threadsafe(cb)
-                    return 
+                    return
                 except Exception as e:
                     logging.error('Failed to process message: %s', e)
                     logging.error('Trackbace %s', traceback.format_exc())
                     cb = functools.partial(self._ack_message, ch, method.delivery_tag, nack=True)
                     connection.add_callback_threadsafe(cb)
-                    return 
+                    return
                 cb = functools.partial(self._ack_message, ch, method.delivery_tag)
                 connection.add_callback_threadsafe(cb)
             return __thread_callback
@@ -87,7 +87,7 @@ class MsgQueue:
             t.start()
             threads.append(t)
         return __callback
-    
+
     def threaded_consume(self, callback):
         # TODO: modify this number
         self.channel.basic_qos(prefetch_count=1)

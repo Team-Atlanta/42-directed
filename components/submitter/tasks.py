@@ -15,26 +15,26 @@ async def submit_data_task(base_url, task_set, confirm_set, redisstore):
             return
         data = await redisstore.get(task)
     if data is None:
-        return 
+        return
     _, task_type, task_id, id, bug_profile_id = task.decode().split(":")
     metadata = await get_task_metadata(redisstore, task_id)
     logging.info(f"Submitting {task_type} {id} for task {task_id}")
-    
+
     attributes = {
         "crs.action.category": "scoring_submission",
         "crs.action.name": "submit_final_results",
-    } 
+    }
     for key, value in metadata.items():
         attributes[key] = value
-    
+
     span_id = f"submitter:{task_type}:{task_id}:{id}:{bug_profile_id}:start"
     root_span = create_span(f"Submitter: Submit {task_type}", attributes)
     current_spans = telemetry_spans.get()
     current_spans[span_id] = root_span
     telemetry_spans.set(current_spans)
-    
+
     submit_data_span = create_span(f"Submitter: Submit {task_type} data", attributes, parent_span=root_span)
-    
+
     result = submit_data(base_url, task_type, task_id, data, sarif_id = id)
     if result["status"] == "accepted" or result["status"] == "inconclusive":
         if task_type != "sarif":
@@ -61,30 +61,30 @@ async def submit_data_task(base_url, task_set, confirm_set, redisstore):
         end_span(submit_data_span)
         mark_span_failed(root_span, Exception(f"Failed to submit {task_type} {id} for task {task_id}: {result["status"]}"))
         end_span(root_span)
-        
-        
+
+
 
 async def confirm_submission_task(base_url, confirm_set, db_session, bundle_set, redisstore, task_set):
     lock = asyncio.Lock()
     async with lock:
         task = await confirm_set.get_one()
     if task is None:
-        return 
+        return
     _, task_type, task_id, id, submission_id, bug_profile_id = task.decode().split(":")
     metadata = await get_task_metadata(redisstore, task_id)
-    
+
     attributes = {
         "crs.action.category": "scoring_submission",
         "crs.action.name": "submit_final_results",
-    } 
+    }
     for key, value in metadata.items():
         attributes[key] = value
-    
+
     # get root span from telemetry_spans
     span_id = f"submitter:{task_type}:{task_id}:{id}:{bug_profile_id}:start"
     root_span = telemetry_spans.get()[span_id]
-    
-    
+
+
     confirm_span_id = f"submitter:{task_type}:{task_id}:{id}:{submission_id}:{bug_profile_id}:confirm"
     if confirm_span_id in telemetry_spans.get():
         confirm_span = telemetry_spans.get()[confirm_span_id]
@@ -93,9 +93,9 @@ async def confirm_submission_task(base_url, confirm_set, db_session, bundle_set,
         current_spans = telemetry_spans.get()
         current_spans[confirm_span_id] = confirm_span
         telemetry_spans.set(current_spans)
-    
-    
-    
+
+
+
     logging.info(f"Confirming {task_type} {id} for task {task_id}, submission id {submission_id}")
     result = confirm_submission(base_url, task_type, task_id, submission_id)
     confirm_span.add_event(f"Confirming {task_type} {id} for task {task_id}, submission id {submission_id}")
@@ -107,7 +107,7 @@ async def confirm_submission_task(base_url, confirm_set, db_session, bundle_set,
             if "functionality_tests_passing" not in result:
                 func_test_result = None
             else:
-                func_test_result = result["functionality_tests_passing"] 
+                func_test_result = result["functionality_tests_passing"]
             logging.info(f"Patch {id} of task {task_id} has been confirmed: status {result["status"]} func test {func_test_result}")
             status = result["status"]
             async with lock:
@@ -140,10 +140,10 @@ async def confirm_submission_task(base_url, confirm_set, db_session, bundle_set,
 
 
             # opentelemetry log
-            
 
 
-        
+
+
     elif task_type == "pov":
         if result["status"] == "accepted":
             logging.info(f"Still waiting for confirmation for {task_type} {id} of task {task_id}")
@@ -182,9 +182,9 @@ async def confirm_submission_task(base_url, confirm_set, db_session, bundle_set,
                     end_span(confirm_span)
                     mark_span_failed(root_span, Exception(f"{task_type} {id} of task {task_id} has been confirmed: {result["status"]}"))
                     end_span(root_span)
-            
+
             # opentelemetry log
-            
+
 
 
     else:
@@ -211,7 +211,7 @@ async def bundle_submission_task(base_url, bundle_queue, redisstore):
         patch_uuid = await redisstore.get(f"submitter:bundle:patch:{bug_profile_id}")
         patch_uuid = patch_uuid.decode() if patch_uuid is not None else None
     if pov_uuid is None or patch_uuid is None:
-        return 
+        return
     # _, task_id, id = task.decode().split(":")
     logging.info(f"Submitting bundle for task {task_id}, pov {pov_uuid}, patch {patch_uuid}")
     metadata = await get_task_metadata(redisstore, task_id)

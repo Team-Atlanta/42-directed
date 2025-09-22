@@ -70,7 +70,7 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error('Failed to connect to message queue: %s', e)
         exit(1)
-        
+
     # start directed daemon
     logging.info('Starting Directed daemon')
     directed_daemon = DirectedDaemon(msg_queue, DEBUG, MOCK)

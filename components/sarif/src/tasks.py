@@ -34,7 +34,7 @@ class SarifTaskWorker:
         self.stop_event = threading.Event()
         self.original_msg = original_msg
         self.thread.start()
-        
+
     def _run(self):
         # start the worker
         logging.info('Started worker %s', self.id)
@@ -42,7 +42,7 @@ class SarifTaskWorker:
         logging.info('Worker %s | Diff %s', self.id, self.diff_file)
         logging.info('Worker %s | Sarif %s', self.id, self.sarif_file)
 
-        # parse sarif reports 
+        # parse sarif reports
         results, stats = parse_sarif_report(self.project_dir, self.sarif_file)
         # output stats info
         logging.info('Worker %s | Stats %s', self.id, stats)
@@ -83,11 +83,12 @@ class SarifTaskWorker:
         if self.sarif_stats['no_file'] > 0:
             logging.warning('Worker %s | SARIF report contains %d files that are not in the codebase', self.id, self.sarif_stats['no_file'])
             return False, "File name error"
-        
+
         # TODO: process JAVA
+        # NOTE: Java only use AI-based analyzer
         if is_jvm_project(os.path.join(self.workspace_dir, "fuzz-tooling"), self.original_msg['project_name']):
             logging.warning('Worker %s | This is a JAVA sarif, currently we just use AI', self.id)
-            # Invoke AI 
+            # Invoke AI
             # try 3 times:
             result = None
             for i in range(20):
@@ -112,7 +113,7 @@ class SarifTaskWorker:
                     if not os.path.exists(os.path.join(self.workspace_dir, 'result.json')):
                         logging.error('Worker %s | Failed to run AI: %s', self.id, 'result.json not found')
                         continue
-                    
+
                     json_result = json.load(open(os.path.join(self.workspace_dir, 'result.json'), 'r'))
 
                     if 'assessment' not in json_result:
@@ -125,7 +126,7 @@ class SarifTaskWorker:
                     else:
                         assessment = json_result['assessment']
 
-                    # check the result  
+                    # check the result
                     if assessment == 'correct':
                         logging.info('Worker %s | AI result: Correct SARIF', self.id)
                         return True, json_result['description'] if 'description' in json_result else 'Correct SARIF'
@@ -138,12 +139,13 @@ class SarifTaskWorker:
                 except Exception as e:
                     logging.error('Worker %s | Failed to run AI: %s', self.id, e)
                     continue
-            
+
             # if we reach here, it means we failed to run AI
             logging.error('Worker %s | Failed to run AI after 3 attempts', self.id)
             return None, 'Prefer not to report'
-                
-        
+
+
+        # NOTE: Java only use AI-based analyzer
         # start slice checker
         # slice_checker = SliceChecker(self.task_id, self.sarif_id, self.sarif_results, original_msg = self.original_msg, project_dir = self.project_dir)
         # slice_checker.stop()
@@ -154,6 +156,7 @@ class SarifTaskWorker:
         # df_checker = DirectedFuzzingChecker(self.task_id, self.sarif_id, self.sarif_results, original_msg = self.original_msg, slice_path = slice_path)
         # it just sent a message to the queue, just let it run
         #df_checker.stop()
+        # NOTE: C/C++ use SeedsChecker (AI + POV)
         # start seeds checker
         seeds_checker = SeedsChecker(self.task_id, self.sarif_results, original_msg = self.original_msg, fuzzing_tooling=self.original_msg['fuzzing_tooling'], project_dir = self.project_dir, sarif_file = self.sarif_file, workspace_dir = self.workspace_dir)
         seeds_checker.stop()
@@ -166,7 +169,4 @@ class SarifTaskWorker:
             logging.warning('Killed worker %s', self.id)
         else:
             self.thread.join()
-            logging.info('Stopped worker %s', self.id) 
-
-
-
+            logging.info('Stopped worker %s', self.id)

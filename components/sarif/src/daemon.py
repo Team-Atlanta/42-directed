@@ -22,7 +22,7 @@ class SarifDaemon:
         self.msg_queue = msg_queue
         self.task_thread = ExceptionThread(target=self._task_thread)
         self.task_thread.start()
-        
+
 
     def _task_thread(self):
         # start consume the message queue
@@ -48,7 +48,7 @@ class SarifDaemon:
         except Exception as e:
             logging.error('Failed to parse message: %s', e)
             raise e
-        
+
         task_id = msg['task_id']
         sarif_id = msg['sarif_id']
         project_name = msg['project_name']
@@ -57,7 +57,7 @@ class SarifDaemon:
         mode = msg['task_type']
         if 'diff' in msg:
             diff = msg['diff']
-        else: 
+        else:
             diff = None
         sarif_report = msg['sarif_report']
         fuzzing_tooling = msg['fuzzing_tooling']
@@ -109,7 +109,7 @@ class SarifDaemon:
         # save diff if it is delta mode, then apply the diff
         if mode == 'delta':
             logging.info('Delta mode detected')
-            # copy and extract diff 
+            # copy and extract diff
             shutil.copy(diff, workspace_dir)
             diff_tar_file = os.path.join(workspace_dir, os.path.basename(diff))
             with tarfile.open(diff_tar_file, 'r:gz') as tar:
@@ -121,11 +121,11 @@ class SarifDaemon:
             patch_cmd = f'patch -d "{focused_repo}" -p1 < "{diff_file}"'
             logging.debug('Running patch command: %s', patch_cmd)
             os.system(patch_cmd)
-            
+
         else:
             diff_file = None
-        
-        
+
+
         task = SarifTaskWorker(task_id, sarif_id, worker_id, focused_repo, diff_file, sarif_file, original_msg = msg, workspace_dir = workspace_dir)
-        
+
         task.stop()

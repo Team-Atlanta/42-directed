@@ -35,7 +35,7 @@ class SeedsChecker:
         self.sarif_file = sarif_file
         self.description = ""
         self.thread.start()
-        
+
 
     def _run(self):
         # start the worker
@@ -47,7 +47,7 @@ class SeedsChecker:
         # logging.info('Starting OSS Fuzz runner')
         # runner = OSSFuzzRunner(fuzzing_tooling_dir, self.original_msg['project_name'], repo_dir, self.workspace_dir)
 
-        # inject the custom stubs 
+        # inject the custom stubs
         # prepare env
         # logging.info('Injecting custom stubs')
         # code_injector = os.path.join(os.getenv('AGENT_ROOT', '/app'), 'code_injector/build/code_injector')
@@ -69,13 +69,13 @@ class SeedsChecker:
         #     logging.debug('Injecting custom stubs to %s:%s', target_file_path, target_line_number)
         #     injected_code_path = os.path.join(code_injector_workdir, f'{current_id}.c')
 
-        #     # find the correct target line 
+        #     # find the correct target line
         #     # TODO: this is a temporary solution, we need to find a better way to handle this
         #     if target_file_path_rel in injection_map:
         #         for injected_line in injection_map[target_file_path_rel]:
         #             if injected_line < target_line_number:
         #                 target_line_number += 1
-            
+
         #     # invoke the code_injector
         #     r = subprocess.run([
         #         code_injector,
@@ -90,14 +90,14 @@ class SeedsChecker:
 
         #     # check the result
         #     if os.path.exists(injected_code_path):
-        #         # copy file 
+        #         # copy file
         #         os.remove(target_file_path)
         #         shutil.copy2(injected_code_path, target_file_path)
         #         # update the injection map
         #         if target_file_path_rel not in injection_map:
         #             injection_map[target_file_path_rel] = []
         #         injection_map[target_file_path_rel].append(target_line_number)
-                
+
         #         # check if the injection was successful
         #         with open(target_file_path, 'r') as f:
         #             content = f.read()
@@ -108,18 +108,18 @@ class SeedsChecker:
         #                 successful_count += 1
         #     # print(result)
         #     current_id += 1
-            
+
         # if successful_count == current_id:
         #     logging.info('All injections successful')
-        #     all_target_injected = True   
+        #     all_target_injected = True
         # target_number = 1 if successful_count == 0 else successful_count
-        
-        # build the fuzzer 
+
+        # build the fuzzer
         # logging.info('Building fuzzer')
         # # Currently we pull the images
         # fuzz_targets = runner.build_fuzzers(is_pull = True)
         # logging.info('Fuzzer built')
-        
+
         # Invoke AI for first round check - Check if it is "very" likely to be a false positive
         cmd = [
             'python3',
@@ -167,9 +167,9 @@ class SeedsChecker:
                 self.description = 'Correct SARIF'
             self.stop_event.set()
             return
-        
-        logging.info('Task %s | AI did not think it is a false positive', self.task_id)    
-        
+
+        logging.info('Task %s | AI did not think it is a false positive', self.task_id)
+
         logging.info('Starting DB session')
         db_connection = DBConnection(db_url = os.getenv('DATABASE_URL'))
         db_connection.start_session()
@@ -181,8 +181,8 @@ class SeedsChecker:
             # get current time
             current_time = time.time()
             # # TODO: grab the seeds from db
-            
-            # # db schema: 
+
+            # # db schema:
             # # - bug_groups (id, bug_id, bug_profile_id)
             # # - bugs       (id, task_id, created_at, arch, poc, harness, sanitizer, sarif)
 
@@ -198,7 +198,7 @@ class SeedsChecker:
             #     .where(Bugs.task_id == self.task_id)
             #     .distinct(BugGroups.bug_profile_id)
             # )
-            
+
             # get task deadline
             stmt = (
                 select(
@@ -214,7 +214,7 @@ class SeedsChecker:
                 self.result = None
                 self.description = 'Task not processing'
                 break
-            
+
             stmt = (
                 select(
                     BugProfiles,
@@ -275,7 +275,7 @@ class SeedsChecker:
                 #     continue
                 with open(crash_report_path, 'wb') as f:
                     f.write(crash[1].encode('utf-8'))
-                
+
                 cmd = [
                     'python3',
                     '-m',
@@ -296,7 +296,7 @@ class SeedsChecker:
                 for i in range(5):
                     if os.path.exists(os.path.join(self.workspace_dir, 'result.json')):
                         os.remove(os.path.join(self.workspace_dir, 'result.json'))
-                    
+
                     # invoke AI
                     try:
                         assessment = None
@@ -319,7 +319,7 @@ class SeedsChecker:
                         logging.error('Task %s | Failed to run AI: %s', self.task_id, e)
                         continue
 
-                    
+
                 # if assessment == 'correct':
                 #     if self.result == True:
                 #         logging.info('Task %s | AI result: Correct SARIF', self.task_id)
@@ -349,7 +349,7 @@ class SeedsChecker:
                 #         # self.stop_event.set()
                 #         break
                 #     break
-                
+
                 if assessment == 'correct':
                     logging.info('Task %s | AI result: Correct SARIF', self.task_id)
                     self.result = True
@@ -359,14 +359,14 @@ class SeedsChecker:
                         self.description = 'Correct SARIF'
                     self.stop_event.set()
                     break
-                
-                    
+
+
                 evaluated_crashes.add(crash[0])
-            
+
             if self.stop_event.is_set():
                 break
-                
-            
+
+
             # get elapsed time
             elapsed_time = time.time() - current_time
             # sleep for the remaining time
@@ -386,5 +386,3 @@ class SeedsChecker:
         else:
             self.thread.join()
             logging.info('Stopped SeedsChecker %s', self.task_id)
-
-
