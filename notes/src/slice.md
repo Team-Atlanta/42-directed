@@ -2,6 +2,10 @@
 
 The **slice component** is a critical part of the CRS that performs **static program slicing** on C/C++ codebases to identify code regions relevant to specific functions or security vulnerabilities. It serves as a code analysis tool using LLVM-based static analysis.
 
+**Note**: The component is designed to serve two distinct purposes (differentiated by `is_sarif` flag), but **one is currently disabled**:
+- ✅ **Delta fuzzing support** (`is_sarif: False`) - **ACTIVE**
+- 🚫 **SARIF validation support** (`is_sarif: True`) - **DISABLED** (infrastructure exists but commented out)
+
 ## Purpose and Functionality
 
 - **Extracts relevant code paths** for targeted functions using LLVM-based static analysis
