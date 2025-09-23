@@ -50,4 +50,4 @@
 - [AIxCC Game Strategy](./aixcc-game-strategy.md)
 
 ## Reference Materials
-- [Yu-Fu's Notes](./yufu.md)
+- [Questionnaire](./questionaire.md)
