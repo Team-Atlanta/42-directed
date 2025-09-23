@@ -31,9 +31,12 @@
 
 - [Patch Generation](./patch_agent.md)
   - [PatchAgent Prompts](./patchagent-prompts.md)
-  - [PatchAgent Reproducer](./patchagent-reproducer.md)
+  - [Patch Validation](./patchagent-validation.md)
   - [Counterexample Sampling Strategy](./patchagent-counterexample-sampling.md)
   - [Auto-Hint System](./patchagent-autohint.md)
+  - [Fast vs Generic Modes](./patchagent-fast-vs-generic.md)
+  - [Academic vs AIxCC Implementation](./patchagent-aixcc-vs-paper.md)
+  - [Reproducer: Cross-Profile Validation (Partly Disabled)](./patchagent-cross-profile-validation.md)
 
 - [SARIF Processing](./sarif.md)
 
