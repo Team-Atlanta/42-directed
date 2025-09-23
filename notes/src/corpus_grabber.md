@@ -23,83 +23,47 @@ Task Arrival → Extract Archives → Corpus Selection → Build Project → Dis
               + Diff patches        or LLM detect                     + triage
 ```
 
-## Overall Workflow
+## Key Corpus Match Algorithm
 
 ```mermaid
 graph TB
-    %% Input Task
-    subgraph "Input Task Message"
-        TASK["{<br/>task_id: '123',<br/>task_type: 'corpus',<br/>project_name: 'libxml2',<br/>focus: 'libxml2-2.9.10',<br/>repo: ['source.tar.gz'],<br/>fuzzing_tooling: 'oss-fuzz.tar.gz',<br/>diff: 'patch.tar.gz'<br/>}"]
-    end
-    
-    %% Task Reception
-    QUEUE["RabbitMQ<br/>corpus_queue"] --> LISTENER["Task Listener<br/>(task_handler.py:256-509)"]
-    TASK --> QUEUE
-    
-    %% Thread Processing
-    LISTENER --> THREAD["Process Thread<br/>(task_handler.py:309-422)<br/>• Retry logic<br/>• Telemetry tracking"]
-    
-    %% Archive Extraction
-    THREAD --> EXTRACT["Extract Archives<br/>(task_handler.py:38-61)<br/>• Source repos<br/>• Fuzz tooling<br/>• Diff patches"]
-    
-    EXTRACT --> PATCH["Apply Diffs<br/>(task_handler.py:88-110)<br/>• Patch files<br/>• Update source"]
-    
-    %% Corpus Acquisition Strategy
-    PATCH --> CORPUS_CHECK{"Project Corpus<br/>Exists?<br/>(grabber.py:123)"}
-    
-    CORPUS_CHECK -->|"Yes"| PROJECT_CORPUS["Use Project Corpus<br/>(grabber.py:124-128)<br/>• corpus/projects/<project>"]
-    
-    CORPUS_CHECK -->|"No"| LLM_DETECT["LLM Filetype Detection<br/>(grabber.py:136-161)"]
-    
-    %% LLM Detection Process
-    LLM_DETECT --> FIND_HARNESS["Find Harness Files<br/>(grabber.py:45-83)<br/>• LLVMFuzzerTestOneInput<br/>• fuzzerTestOneInput"]
-    
-    FIND_HARNESS --> DETECT_TYPE["Detect File Types<br/>(agent/filetype.py:34-54)<br/>• Analyze harness code<br/>• Determine input types"]
-    
-    DETECT_TYPE --> FILETYPE_CORPUS["Collect Filetype Corpus<br/>(grabber.py:157-160)<br/>• corpus/extensions/<type>"]
-    
-    %% Build and Discovery
-    PROJECT_CORPUS --> BUILD["Build Project<br/>(oss_fuzz.py:116-154)<br/>• Docker image<br/>• Compile fuzzers"]
-    FILETYPE_CORPUS --> BUILD
-    
-    BUILD --> FIND_FUZZERS["Find Fuzzers<br/>(oss_fuzz.py:50-113)<br/>• Binary executables (C/C++)<br/>• Source files (Java)<br/>• Extract sanitizers"]
-    
-    %% Storage and Distribution
-    FIND_FUZZERS --> SAVE_DB["Save to Database<br/>(task_handler.py:122-161)<br/>• Compress corpus<br/>• Store in /crs/corpus<br/>• Create seed record"]
-    
-    SAVE_DB --> LANGUAGE_CHECK{"Is Java<br/>Project?"}
-    
-    LANGUAGE_CHECK -->|"No (C/C++)"| CMIN["Send to CMIN<br/>(task_handler.py:217-254)<br/>• Per harness<br/>• cmin_queue"]
-    
-    LANGUAGE_CHECK -->|"Yes"| SKIP_CMIN["Skip CMIN"]
-    
-    %% Bug Creation for Triage
-    SAVE_DB --> CREATE_BUGS["Create Bug Records<br/>(task_handler.py:163-214)<br/>• Per corpus file<br/>• Per sanitizer<br/>• Per harness"]
-    
-    CREATE_BUGS --> TRIAGE_DB["Save to Bug Table<br/>• Direct triage submission"]
-    
-    %% Success and Error Handling
-    CMIN --> ACK["ACK Message<br/>(task_handler.py:424-431)"]
-    SKIP_CMIN --> ACK
-    TRIAGE_DB --> ACK
-    
-    BUILD --> |"On Error"| RETRY["Retry Logic<br/>(task_handler.py:392-419)<br/>• Max 3 attempts<br/>• x-retry header"]
-    RETRY --> |"Retry < 3"| QUEUE
-    RETRY --> |"Retry >= 3"| NACK["NACK Message<br/>Drop task"]
-    
+    %% Input
+    INPUT["Project Name<br/>(e.g., 'libxml2')"]
+
+    %% Exact Match Strategy
+    INPUT --> CHECK{"Exact Match:<br/>corpus/projects/<project_name><br/>exists?<br/>(grabber.py:123)"}
+
+    CHECK -->|"Yes"| PROJECT["PROJECT-SPECIFIC CORPUS<br/>(grabber.py:124-128)<br/>• Handpicked corpus<br/>• Direct copy from<br/>  corpus/projects/<project_name>"]
+
+    CHECK -->|"No"| HARNESS["Find Harness Functions<br/>(grabber.py:45-83)<br/>• Search for:<br/>  - LLVMFuzzerTestOneInput (C/C++)<br/>  - fuzzerTestOneInput (Java)"]
+
+    %% LLM Filetype Detection
+    HARNESS --> LLM["LLM Filetype Analysis<br/>(agent/filetype.py:34-54)<br/>• Analyze harness code<br/>• Determine expected input types"]
+
+    LLM --> TYPES["Detected File Types<br/>(e.g., 'xml', 'pdf', 'jpeg')"]
+
+    TYPES --> FILETYPE["FILETYPE-BASED CORPUS<br/>(grabber.py:157-160)<br/>• Collect from:<br/>  corpus/extensions/<type>/*"]
+
+    %% Output
+    PROJECT --> OUTPUT["Selected Corpus<br/>→ Copy to working directory"]
+    FILETYPE --> OUTPUT
+
     %% Styling
-    classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef corpus fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef build fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef output fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
-    
-    class TASK input
-    class CORPUS_CHECK,LANGUAGE_CHECK decision
-    class PROJECT_CORPUS,LLM_DETECT,FIND_HARNESS,DETECT_TYPE,FILETYPE_CORPUS corpus
-    class BUILD,FIND_FUZZERS build
-    class SAVE_DB,CMIN,CREATE_BUGS,TRIAGE_DB,ACK output
+    classDef match fill:#e3f2fd,stroke:#1565c0,stroke-width:3px
+    classDef project fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+    classDef llm fill:#fff3e0,stroke:#ef6c00,stroke-width:3px
+    classDef output fill:#f3e5f5,stroke:#6a1b9a,stroke-width:3px
+
+    class CHECK match
+    class PROJECT project
+    class LLM,HARNESS,TYPES,FILETYPE llm
+    class OUTPUT output
 ```
+
+**Key Points:**
+- **No fuzzy matching**: Only exact string matching for project names
+- **Two-tier strategy**: Project-specific (priority) → Filetype-based (fallback)
+- **LLM intelligence**: Analyzes harness code to determine appropriate file types when no exact match
 
 The corpus grabber follows a sophisticated selection workflow with two distinct paths:
 
@@ -122,6 +86,11 @@ The corpus grabber follows a sophisticated selection workflow with two distinct 
 - **When Used**: Project directory exists in corpus collection
 - **Advantage**: Curated, project-optimized test inputs
 - **Implementation**: [`grabber.py#L123-128`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L123)
+- **Exact Match Proof**: [`grabber.py#L119-123`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L119) uses direct string concatenation and `os.path.isdir()` check:
+  ```python
+  project_dir = os.path.join(project_corpus, project_name)  # Line 119: Direct concatenation
+  if os.path.isdir(project_dir):  # Line 123: Exact directory name check
+  ```
 
 ### 2. Filetype-Based Corpus (Fallback)
 **Location**: `corpus/extensions/<filetype>/`
@@ -134,12 +103,62 @@ The corpus grabber follows a sophisticated selection workflow with two distinct 
 
 ## Corpus Data Pipeline
 
-### Corpus Collection (Pre-deployment)
-The corpus data is prepared through a multi-stage pipeline:
+### Corpus Collection Sources and Preparation
 
-1. **Gathering** ([`README.md#L4`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L4)): Seeds collected from public sources via `corpus/PoC_crawler.py`
-2. **Classification by Magika** ([`README.md#L5`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L5)): File type detection using Google's Magika tool
-3. **LLM Classification** ([`README.md#L6`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L6)): Unknown files further classified by LLM
+**🔍 Important: The corpus collection goes beyond OSS-Fuzz:**
+
+1. **Primary Collection Source** (Missing Implementation):
+   - **PoC_crawler.py**: Referenced but not in codebase
+   - Described as collecting from "available public sources"
+   - Imported in [`tally.py#L7`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/corpus/tally.py#L7)
+
+2. **OSS-Fuzz Integration**:
+   - Uses OSS-Fuzz project configurations ([`grabber.py#L19-21`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L19))
+   - Clones main repositories from project.yaml configurations
+   - Leverages OSS-Fuzz harness patterns for detection
+
+3. **Manual Curated Corpus**:
+   - Handpicked project-specific corpus in `corpus/projects/`
+   - Available for: commons-compress, libxml2, libexif, zookeeper, freerdp, curl, tika, sqlite3
+   - Likely collected from project test suites or known good inputs
+
+### Corpus Preparation Pipeline
+
+1. **File Type Classification via Magika** ([`PoC_type_classifier_Magika.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/corpus/PoC_type_classifier_Magika.py)):
+   - Uses Google's Magika ML-based file type detector
+   - Creates symlinks in `extensions_magika/<filetype>/` directories
+   - Processes all collected corpus files
+
+2. **LLM-based Classification for Unknown Files** ([`PoC_type_classifier_LLM.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/corpus/PoC_type_classifier_LLM.py)):
+   - Handles files marked as "unknown" by Magika
+   - Clones project repositories to find harness code
+   - Uses LLM to analyze harness and determine expected file types
+   - Creates appropriate directory structure in `extensions/`
+
+3. **Statistical Analysis** ([`tally.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/corpus/tally.py)):
+   - Tracks corpus distribution by project and file type
+   - Maintains project-to-filetype mappings
+
+### No Fuzzy Matching for Project Names
+
+**✅ Confirmed: The system uses EXACT string matching only**
+
+Evidence:
+1. **Direct Directory Lookup** ([`grabber.py#L123`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L123)):
+   ```python
+   if os.path.isdir(os.path.join(project_corpus, project_name))
+   ```
+
+2. **No Normalization or Similarity Algorithms**:
+   - No imports of fuzzy matching libraries (e.g., fuzzywuzzy, difflib)
+   - No string similarity calculations
+   - No case normalization or character substitution
+
+3. **Strict Validation** ([`grabber.py#L19-21`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L19)):
+   - Raises `FileNotFoundError` if exact project name not found
+   - No attempt at finding similar project names
+
+**Design Rationale**: This strict matching ensures corpus quality - when a project-specific corpus is used, it's guaranteed to be for the exact project, eliminating false positives from similar project names
 
 ### Harness Detection Logic
 
