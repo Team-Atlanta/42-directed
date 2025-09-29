@@ -7,37 +7,52 @@ My answer by digging the source code.
 **Q:** Is the CRS an LLM-centric system or a traditional toolchain with LLM
 augmentation?
 
-**A:** _[Your answer here]_
+**A:** Traditional toolchain with strategic LLM augmentation. Some subtasks like patch generation and SARIF assessment are LLM-centric.
 
 ---
 
 **Q:** How does LLM integration differ between bug finding and patching modules? Why?
 
-**A:** _[Your answer here]_
+**A:** Bug finding is traditional fuzzing-centric with LLM augmentation (one-time seed generation only), while patching uses LLM-centric approach with iterative agents and tool APIs.
 
 
 ## Infrastructure
 **Q:** What framework manages compute resources? (Kubernetes, custom scheduler built on Azure API, etc.)
 
-**A:** _[Your answer here]_
+**A:** Kubernetes on Azure with Helm charts for deployment. Each component runs as separate pods with ConfigMaps and Secrets for configuration.
 
 ---
 
 **Q:** How are CPU cores, memory, and nodes scheduled across tasks?
 
-**A:** _[Your answer here]_
+**A:** Hybrid Kubernetes deployment with both fixed and auto-scaled pods consuming tasks from RabbitMQ queues. No dedicated infrastructure per challenge project.
+
+- **Architecture**: All pods listen to their RabbitMQ queue channels and process tasks when available
+- **Fixed replicas (always running)**: BandFuzz ([24 pods](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L125)), PrimeFuzz ([8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L118)), JavaDirected ([8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L147)), Patch-Claude ([8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L205)), Patch-Reproducer ([12](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L219))
+- **Auto-scaled by KEDA (0 to N)**: Seedgen ([0-8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L73-L76)), Triage ([0-18](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L183-L186)), SARIF ([0-4](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L236-L239)) scale based on queue depth
+- **Resource allocation**: Global limits ([30-32 CPU cores](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L4-L8)); BandFuzz internally allocates fuzzing time using [weights](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L37-L52) (ASAN=5, UBSAN=1, MSAN=1)
+- **Task concurrency**: [Max 8 concurrent challenge projects](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L3) system-wide
+- **Shared resource pool**: All pods share work across all concurrent tasks (e.g., [24 BandFuzz pods](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L125) pick from [shared Redis fuzzlet pool](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/fuzzlets.go#L20) containing all tasks)
+- **No dynamic provisioning**: Pods run on pre-provisioned Azure node pool, no per-task VM/node creation or Azure API calls
 
 ---
 
 **Q:** Does LLM participate in resource scheduling?
 
-**A:** _[Your answer here]_
+**A:** No. Resource scheduling is deterministic via Kubernetes configs and RabbitMQ queue distribution. LLMs are only used for seed generation and patch synthesis, not infrastructure decisions.
 
 ---
 
 **Q:** How does the system handle failures? (component crashes, VM node failures, network partitions)
 
-**A:** _[Your answer here]_
+**A:** Multi-layer resilience through Kubernetes, RabbitMQ, and application-level mechanisms.
+
+- **Pod crashes**: Kubernetes restarts failed pods automatically; KEDA maintains replica counts
+- **Message failures**: RabbitMQ durable queues with [retry headers](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L498-L522) (max 3 retries)
+- **Connection failures**: [Connection pooling](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/scheduler/internal/messaging/mq.go#L108) with automatic reconnection
+- **Redis failures**: [Sentinel for HA](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/utils/redis.py#L19-L58) with automatic failover
+- **Database failures**: Transaction rollback and retry logic
+- **VM node failures**: Kubernetes reschedules pods to healthy nodes (within pre-provisioned pool)
 
 
 # LLM
@@ -45,72 +60,120 @@ augmentation?
 ## LLM Component Design
 **Q:** What LLM application frameworks or scaffolds are used? (e.g., LangChain, MCP, custom frameworks, Claude Code/Cursor/Gemini wrappers)
 
-**A:** _[Your answer here]_
+**A:** Mixed approach with framework usage varying by component:
+- **SeedGen**: [LangGraph StateGraph](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py#L4) for workflow; [MCP adapters](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L10-L11) with filesystem/treesitter servers ([enabled in prod](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/seedgen/templates/deployment.yaml#L141))
+- **PatchAgent**: [LangChain ChatPromptTemplate](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L42) with custom tool calling
+- **SARIF**: [MCP-agent](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/README.md#L18) for code analysis
+- **Infrastructure**: [LiteLLM Proxy](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/values.yaml#L4) for unified LLM API interface
 
 ---
 
 **Q:** How are agentic components designed?
 
-**A:** _[Your answer here]_
+**A:** Tool-based agents with structured prompts and error handling loops.
 
-- Tool selection and integration
-- Prompt engineering strategies
-- Iterative research loop design
+- **Tool selection**: Domain-specific tools ([viewcode, locate, validate](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L47-L70) for patching; [filesystem, treesitter](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L38-L48) MCP servers for seedgen)
+- **Prompt engineering**: Language-specific system/user prompts with [detailed format specs](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L71-L84) and psychological techniques
+- **Iterative loops**: Patch only - generation → validation → retry with [32 configs](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/patch_agent.md#L31); Seedgen is [one-time generation](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/seedgen.md#L12) with script error retry only
 
 ---
 
 **Q:** What prompting techniques are employed? (e.g., CoT, few-shot, context engineering, deep research loops, RAG, voting, ensembles)
 
-**A:** _[Your answer here]_
+**A:** Multiple advanced techniques including psychological persuasion:
+
+- **Chain-of-Thought (CoT)**: [Explicit CoT](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/cotbot.py#L20) with self-doubt ("CONSIDER YOU MAY BE WRONG", "ACTUALLY RE-EXAMINE")
+- **Ultra-thinking prompt**: [Exists in code](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/codexbot.py#L29) but NOT USED (codex mode [disabled in prod](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L173), only MCP enabled)
+- **Psychological tricks**: ["ten dollar tip"](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L176) and ["save thousands of lives"](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/prompt.py#L190) appeals
+- **Model ensembles**: [Parallel execution](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L465-L470) of 3 models ([GPT-4.1, O4-mini, Claude-3.7-sonnet](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L592-L594))
+- **No voting/RAG**: Each model runs independently; no consensus mechanism or retrieval augmentation
 
 ---
 
 ## LLM Infrastructure
 **Q:** Did you use any framework or implemented one? (e.g., LiteLLM Proxy)
 
-**A:** _[Your answer here]_
+**A:** Yes, [LiteLLM Proxy](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/values.yaml#L4) deployed as [1 replica service](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L51) for unified API interface and load balancing.
 
 ---
 
 **Q:** Did you use any observability tool? (OpenLIT, Traceloop, Phoenix, etc.)
 
-**A:** _[Your answer here]_
+**A:** Yes, [OpenLIT v1.33.11](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/requirements.txt#L22) deployed across ALL components ([seedgen](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/utils/telemetry.py#L29), [patchagent](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patch_generator/telemetry.py#L40), [SARIF](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/telemetry.py#L44), [primefuzz](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/utils/telemetry.py#L18), etc.) for LLM observability with OpenTelemetry integration.
 
 ---
 
 **Q:** How did you handle LLM failure? (rate limit, timeout, …)
 
-**A:** _[Your answer here]_
+**A:** Simple retry without exponential backoff or vendor fallback:
+
+- **PatchAgent**: [3 retries for APIError](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/base.py#L33-L39) with immediate retry (no sleep/backoff)
+- **SeedGen MCP**: [5 error retries max](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py#L223) for script generation errors
+- **LiteLLM Proxy**: [600s timeout](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/files/config.yaml#L71), handles provider-specific rate limits
+- **No vendor fallback**: Models run in [parallel](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L465-L470) (GPT-4.1, O4-mini, Claude-3.7), not as fallbacks
+- **No exponential backoff**: All retries are immediate without delay strategy
 
 
 ## LLM Model/Quota Usage
 **Q:** How are LLM quotas and throughput managed?
 
-**A:** _[Your answer here]_
+**A:** Through LiteLLM Proxy centralization and pod replica limits:
+
+- **Centralized routing**: ALL components route through [LiteLLM Proxy at port 4000](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L21):
+  - SeedGen: [via LITELLM_BASE_URL](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L21)
+  - PatchAgent: [via OPENAI_BASE_URL](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/patch-gpt/templates/deployment.yaml#L78)
+  - SARIF: [via OPENAI_BASE_URL](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/sarif/templates/deployment.yaml#L53-L54)
+- **Parallel execution**: [3 models run concurrently](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L465-L470) per task in seedgen
+- **Throughput control**: Fixed pod counts limit concurrent calls ([8 patch-claude](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L205), [1 patch-gpt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L212))
+- **No explicit quota management**: Relies on provider rate limits and [600s timeout](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/files/config.yaml#L71)
 
 ---
 
 **Q:** Token budget allocation per task/component
 
-**A:** _[Your answer here]_
+**A:** No explicit per-task token budgets, relies on model-specific limits and natural consumption patterns:
+
+- **Model limits**: [32K-64K max_tokens for Claude models](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/files/config.yaml#L30-L45)
+- **Natural budget control**: Limited LLM usage (only SeedGen, PatchAgent, SARIF) means unlikely to exceed competition quotas
+- **Indirect controls**: Pod replica limits ([8 patch-claude](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L205), [1 patch-gpt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L212)) and [600s timeout](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/files/config.yaml#L71)
+- **Strategy implication**: Traditional-first approach with selective LLM augmentation naturally limits token consumption
 
 ---
 
 **Q:** Model selection strategy (reasoning vs non-reasoning models, price/performance, priority hierarchy)
 
-**A:** _[Your answer here]_
+**A:** Task-specific static model assignment with diversity-focused parallel execution:
+
+- **SeedGen diversity strategy**: [3 models in parallel](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L465-L470) (GPT-4.1, O4-mini, Claude-3.7-sonnet) for generation diversity
+- **SeedGen role-based models**: Different models for different roles:
+  - [Generative: claude-3.5-sonnet](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L74)
+  - [Refiner: o1](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L79) (reasoning model)
+  - [Inference: o3-mini](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L84)
+  - [Context analysis: gpt-4.1](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/presets.py#L89)
+- **PatchAgent exploration**: [Temperature variations [0, 0.3, 0.7, 1]](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L38) for patch diversity
+- **Component-specific assignments**:
+  - Patch-claude: [Claude-4-opus](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/patch-claude/values.yaml#L2) (strongest)
+  - Patch-gpt: [GPT-4.1](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/patch-gpt/values.yaml#L1)
+  - Triage: [O4-mini](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/triage/values.yaml#L4) (fast classification)
+  - SARIF: [Dual-model with provider toggle](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L184) (OpenAI/Anthropic)
+- **No dynamic selection or fallback**: Static assignment per component/task type
 
 ---
 
 **Q:** Downgrade strategy when quota exhausted
 
-**A:** _[Your answer here]_
+**A:** No downgrade strategy
 
 ---
 
 **Q:** What controls LLM usage across components? (LiteLLM, custom rate limiters, priority queues)
 
-**A:** _[Your answer here]_
+**A:** LiteLLM proxy with pod-level concurrency control:
+
+- **Central routing**: [LiteLLM proxy at port 4000](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/litellm/files/config.yaml#L1-L76) for all components
+- **Pod replica limits**: Control concurrent requests ([8 patch-claude](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L205), [1 patch-gpt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L212))
+- **RabbitMQ prefetch**: [Task-level throttling](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L547) (e.g., prefetch_count=8 for seedgen)
+- **No custom rate limiters or priority queues**: Relies on infrastructure-level controls
 
 
 # Bug Finding
@@ -118,90 +181,270 @@ augmentation?
 ## Overall Bug Finding Strategy
 **Q:** What is the overall bug finding strategy and pipeline?
 
-**A:** _[Your answer here]_
+**A:** Corpus-enhanced multi-engine fuzzing strategy combining prepared and LLM-generated seeds:
+
+**Core Strategy**: Use both prepared corpus and LLM-generated seeds to bootstrap multiple fuzzing engines running in parallel
+
+**Corpus Enhancement Pipeline**:
+1. **Prepared Corpus**: [CorpusGrabber](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L123-L160) provides initial seeds:
+   - [Project-specific corpus](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L123-L128) from `corpus/projects/<project>` (pre-collected)
+   - [LLM-guided filetype corpus](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/grabber.py#L157-L160) as fallback (analyzes harness to detect file types)
+   - Note: [Crawler script referenced but not released](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/README.md#L4) (`PoC_crawler.py` missing from codebase)
+2. **LLM-Generated Seeds**: [SeedGen with 3 models](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L464-L470) (GPT-4.1, O4-mini, Claude-3.7-sonnet):
+   - [One-time generation per task](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L143-L207) (no feedback loop)
+   - Multiple strategies: Full (instrumented), Mini (lightweight), MCP (AST-based)
+
+**Multi-Engine Fuzzing Execution**:
+- [BandFuzz](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/scheduler.go#L153-L214): RL-scheduled 15-min epochs, 24 replicas, C/C++ only
+- [PrimeFuzz](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/primefuzz/task_handler.py#L99-L152): Continuous LibFuzzer/Jazzer, 8 replicas, all languages
+- [Directed](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L342): Delta-mode targeting changed functions
+- [Slice](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/src/daemon/daemon.py#L285): Program slicing for focused paths
+
+**Corpus Refinement**:
+- [Cmin++ minimization](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/cminplusplus/cmin_calculator.cpp) removes redundant seeds
+- [Redis coordination](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/fuzzlets.go#L50) shares corpus between engines
+- [Batch sync after epochs](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/executor/upload.go#L19-L54) in BandFuzz
 
 ---
 
 **Q:** Are there bug-type-specific finding approaches or components?
 
-**A:** _[Your answer here]_
+**A:** No targeted bug-type finding strategies; bug classification happens post-crash in triage:
+
+**Finding Phase (No CWE awareness)**:
+- Fuzzers use generic crash detection without bug-type targeting
+- [BandFuzz multi-sanitizer](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/builder/afl.go#L26-L45): Builds for different sanitizers but no CWE-specific strategies
+- [SeedGen prompts](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen): No CWE or vulnerability-type guidance in LLM prompts
+- No specialized fuzzers for specific vulnerability classes
+
+**Triage Phase (CWE classification)**:
+- [UnifiedParser CWE extraction](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/parser/unifiedparser.py#L87-L91): Post-crash analysis
+- [Jazzer CWE mapping](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/parser/jazzer.py#L14-L31): Maps Java exceptions to CWEs after crash
+- Classification by sanitizer type (ASAN→memory, UBSAN→undefined behavior)
+
+**Strategy**: Generic crash-driven fuzzing with post-hoc bug classification rather than targeted vulnerability hunting
 
 
 ## Static Analysis
 **Q:** How is static analysis used to guide other components? (call graph, program slicing for LLM context)
 
-**A:** _[Your answer here]_
+**A:** Extensive static analysis infrastructure guides fuzzing, seed generation, and patching:
+
+**Program Slicing for Directed Fuzzing**:
+- [LLVM-based slicing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/slice.py#L66-L73) extracts call graphs: `--callgraph=true --slicing=true`
+- [AFL++ allowlist generation](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L252-L260) from slice results
+- [IBM WALA for Java](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java) bytecode slicing
+- Results guide [selective instrumentation](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/modules/fuzzer_runner.py#L149-L154) in fuzzers
+
+**AST Analysis for Seed Generation (MCP Mode)**:
+- [Tree-sitter AST analysis](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L241-L263) via MCP servers
+- [Code structure discovery](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/graphs/mcpbot.py#L33-L105) for LLM context
+- [Backdoor pattern detection](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/seedgen-mcpmode.md#L293-L298) in harnesses
+- [Function enumeration](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/seedmcp.py#L91) without compilation
+
+**Language Server for Patch Generation**:
+- [Clangd hover hints](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/internal.py#L43-L68) for C/C++ symbol definitions
+- [Auto-hint for stack traces](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/patchagent-autohint.md#L24-L48): Provides symbol context at crash locations
+- [Locate tool](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L55-L65) uses LSP to find symbol definitions
+- Character-level analysis to identify relevant variables/functions (C/C++ only)
+
+**Note on Static Analysis Usage**:
+- CorpusGrabber uses simple string search and LLM reasoning, not static analysis
+- Static analysis primarily serves as **input** to other components rather than driving decisions
+- No sophisticated dataflow or taint analysis found in the codebase
 
 ---
 
 **Q:** How do dynamic techniques and LLM enhance static analysis? (runtime feedback, LLM-guided patterns)
 
-**A:** _[Your answer here]_
+**A:** No enhancements found - dynamic and LLM operate independently from static analysis:
+
+- **No runtime feedback to static analysis**: Dynamic execution results don't refine static slicing or call graphs
+- **No LLM-guided static analysis**: LLM consumes AST/LSP outputs but doesn't improve static analysis algorithms
+- **Separate pipelines**: Static analysis (slice) → Dynamic fuzzing → LLM patching, with no feedback loops
+- **Example**: [Indirect calls handled at runtime](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/callgraph/llvm/SeedMindCFPass.cpp#L59-L60) via dynamic hooking, not static resolution improvements
 
 
 ## Dynamic Analysis / Fuzzing
 **Q:** What fuzzing strategies are implemented? (ensemble, concolic, directed, coverage-guided)
 
-**A:** _[Your answer here]_
+**A:** Multiple fuzzing strategies with ensemble execution but no concolic testing:
+
+**Implemented Strategies**:
+- **Ensemble fuzzing**: [Multiple engines run in parallel](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L116-L176) (BandFuzz, PrimeFuzz, Directed, JavaDirected)
+- **Coverage-guided**: [AFL++ and LibFuzzer](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/builder/afl.go#L26) with edge coverage feedback
+- **Directed fuzzing**: [AFL++ allowlist](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/modules/fuzzer_runner.py#L149-L154) for targeting modified functions
+- **Multi-sanitizer**: [ASAN, MSAN, UBSAN](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/builder/afl.go#L26-L45) parallel execution
+- **Factor-based scheduling**: [BandFuzz weighted factors](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/pick.go#L21-L24) (TaskFactor, SanitizerFactor) with probabilistic selection
+
+**NOT Implemented**:
+- **No RL scheduling**: Uses [simple factor scoring](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L37-L52), not reinforcement learning
+- **No concolic execution**: No symbolic/concrete hybrid testing
+- **No grammar-based fuzzing**: Despite structured input support
+- **No taint-guided fuzzing**: No dataflow tracking
 
 ---
 
 **Q:** How does LLM augment fuzzing? (seed/dictionary/oracle generation, mutator/generator synthesis, feedback mechanisms)
 
-**A:** _[Your answer here]_
+**A:** LLM augments fuzzing through initial corpus/seed generation only:
+
+**Implemented Augmentations**:
+- **Initial corpus selection**: [CorpusGrabber uses LLM](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/agent/filetype.py#L34-L54) to analyze harness and select filetype-based corpus
+- **Seed generation**: [SeedGen creates initial seeds](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L464-L470) with format-aware Python generators
+- **Structure understanding**: [LLM analyzes harness code](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/alignment.py#L26-L41) to identify input structure
+- **Filetype detection**: LLM identifies expected formats in both [CorpusGrabber](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/corpusgrabber/agent/filetype.py#L41-L44) and [SeedGen](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/filetype.py#L11)
+- **One-time generation**: Both corpus selection and seed generation happen once at task arrival
+
+**NOT Implemented**:
+- **No dictionary generation**: No LLM-created fuzzing dictionaries for AFL++/LibFuzzer
+- **No crash oracles**: LLM doesn't classify crashes during fuzzing (only post-triage)
+- **No mutator synthesis**: No LLM-generated mutation strategies
+- **No feedback mechanisms**: No LLM refinement based on coverage/crashes
+- **No continuous generation**: LLM not consulted during fuzzing execution
 
 ---
 
 **Q:** Which sanitizers are deployed and what is the strategy considering performance/coverage trade-offs?
 
-**A:** _[Your answer here]_
+**A:** Multiple sanitizers with probabilistic scheduling favoring ASAN:
+
+**Deployed Sanitizers**:
+- **ASAN (AddressSanitizer)**: [Score 5](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L42) - Memory corruption bugs
+- **MSAN (MemorySanitizer)**: [Score 1](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L46) - Uninitialized memory reads
+- **UBSAN (UndefinedBehaviorSanitizer)**: [Score 1](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L44) - Undefined behavior
+
+**Scheduling Strategy**:
+- **Probabilistic selection**: [Weighted random picker](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/pick.go#L47-L53) selects next fuzzlet
+- **5:1:1 probability ratio**: Within same task, ASAN has ~71% chance, MSAN/UBSAN each ~14%
+- **Two-factor scoring**: [TaskFactor](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L27) (1/n per task) × [SanitizerFactor](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L42-L46) (5 or 1)
+- **Rationale**: Prioritizes memory corruption (most critical) while maintaining coverage diversity
 
 ---
 
 **Q:** How are fuzzing resources allocated across targets? (time-slicing, worker distribution, harness assignment)
 
-**A:** _[Your answer here]_
+**A:** Fixed pod allocation with epoch-based time-slicing:
+
+**Worker Distribution**:
+- **Fixed replicas**: [BandFuzz: 24](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L40), [PrimeFuzz: 8](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L121), [Directed: 0-6](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L152-L157)
+- **No dynamic scaling**: Pods pre-allocated at deployment time
+- **Per-pod fuzzing**: Each pod runs single fuzzing instance
+
+**Time-Slicing (BandFuzz)**:
+- **15-minute epochs**: [Scheduling interval](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/scheduler.go#L91) per fuzzlet
+- **Round-robin with weights**: [Probabilistic picker](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/pick.go#L29-L58) selects next fuzzlet
+- **No preemption**: Epoch runs to completion
+
+**Harness Assignment**:
+- **All harnesses per task**: Fuzzers receive [all harness binaries](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/builder/yamlParser.go#L20-L30) for the task
+- **No specialization**: Any fuzzer can run any harness
+- **Shared corpus**: [Redis-coordinated](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/fuzzlets.go#L50) corpus sharing
 
 ---
 
 **Q:** Does fuzzing provide feedback to other bug finding components? (program dynamics for LLM context, crash validation)
 
-**A:** _[Your answer here]_
+**A:** No direct feedback - fuzzing operates as isolated pipeline stage:
+
+- **No program dynamics sharing**: Fuzzing execution traces not provided to LLM components
+- **No crash validation loop**: Crashes go to triage, no feedback to adjust fuzzing
+- **One-way data flow**: Fuzzing → Triage → Patch, without backward connections
+- **Corpus sharing only**: [Redis-based corpus](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/fuzzlets.go#L50) shared between fuzzer instances only
 
 ## Build-Time Configuration
 **Q:** What custom instrumentation is added?
 
-**A:** _[Your answer here]_
+**A:** Custom instrumentation only for SeedGen's dynamic call graph collection:
+
+**SeedGen Full Mode (C/C++ only)**:
+- [SeedMindCFPass LLVM pass](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/callgraph/llvm/SeedMindCFPass.cpp#L57-L73): Hooks all function calls including indirect
+- [clang-argus/clang-argus++ wrappers](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/infra/aixcc.py#L141-L165): Replace CC/CXX compilers
+- [bandld custom linker](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/seedgen-fullmode.md#L264-L266): Links instrumentation runtime
+- [libcallgraph_rt.a runtime](https://github.com/Team-Atlanta/42-afc-crs/blob/main/notes/src/seedgen-fullmode.md#L273-L276): Collects dynamic call graphs
+
+**Purpose**: Enable [get_related_functions](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/seedgen2/agents/predicates.py#L87) to find ancestors/successors in call graph for LLM context when generating documentation and improving seeds
 
 ---
 
 **Q:** How does the CRS prevent build breakage from custom instrumentation?
 
-**A:** _[Your answer here]_
+**A:** Parallel execution provides implicit fallback:
+
+- **Parallel modes**: [Full and Mini run concurrently](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L144-L170), not sequentially
+- **Independent failures**: If Full mode instrumentation fails, [Mini mode still completes](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/seedgen/task_handler.py#L209-L218)
+- **No instrumentation in Mini/MCP**: These modes use harness source analysis only, no compilation
+- **Result**: At least one mode succeeds even if custom instrumentation breaks
 
 
 ## Non-Memory Safety Bugs
 **Q:** How does the CRS handle non-memory safety findings? (logic bugs, OOM, timeout, stack overflow, uncaught exceptions)
 
-**A:** _[Your answer here]_
+**A:** Standard fuzzer crash detection with multiple sanitizers:
+
+- Uses standard fuzzer capabilities (AFL++, LibFuzzer, Jazzer) for crash/timeout/OOM detection
+- [UBSAN for undefined behavior](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/bandfuzz/internal/scheduler/simpleFactors.go#L44) in addition to ASAN/MSAN
 
 
 ## Bug/Finding Processing
 **Q:** How are duplicate findings detected and deduplicated? (stack-based, root cause, patch-based grouping)
 
-**A:** _[Your answer here]_
+**A:** Two-stage deduplication: pentuple signature matching first, then cluster-based comparison using stack traces or AI root cause analysis.
+
+**Execution Workflow:**
+1. **Stage 1 - Pentuple Signature Check** ([task_handler.py#L436-L446](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L436-L446)):
+   - Creates MD5 hash of `task_id:harness:sanitizer:bug_type:trigger_point`
+   - Redis lookup: if exists → use existing bug_profile_id, skip to clustering
+   - If new → create bug profile, proceed to Stage 2
+
+2. **Stage 2 - Cluster Deduplication** (only for new profiles, [task_handler.py#L491-L495](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L491-L495)):
+   - Retrieves all existing clusters for the task
+   - Compares new crash against each cluster using configured method:
+
+   **Method A - ClusterFuzz** ([clusterfuzz_dedup.py#L87-L105](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/clusterfuzz_dedup.py#L87-L105)):
+   - Stack trace similarity via CrashComparer
+   - Instrumentation key matching for Java
+   - 80% similarity threshold
+
+   **Method B - Codex AI** ([codex_dedup.py#L26-L93](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/dedup/codex_dedup.py#L26-L93)):
+   - LLM analyzes root cause using source code
+   - Conservative: requires 100% confidence
+   - Returns YES/NO for duplication
+
+3. **Result**: Either assigns to existing cluster or creates new cluster
+
+**Special Handling - Timeout/OOM:**
+- **Deduplication Strategy**: Uses same two-stage process but with simplified signatures:
+  - [bug_type="timeout" or "out-of-memory"](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L419)
+  - [trigger_point="N/A" for Java](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/parser/jazzer.py#L78), varies for other languages
+  - Pentuple becomes: `task_id:harness:sanitizer:timeout/out-of-memory:N/A`
+  - Results in one bug profile per harness/sanitizer for all timeouts, another for all OOMs
+- **Pod Separation** ([task_handler.py#L414-L429](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L414-L429)):
+  - `TIMEOUT_OOM_TRIAGE="sender"`: Regular pods forward to dedicated queue
+  - `TIMEOUT_OOM_TRIAGE="processor"`: Dedicated pods only process timeout/OOM
+  - `TIMEOUT_OOM_TRIAGE="none"`: No separation (default)
 
 ---
 
 **Q:** What criteria determine finding prioritization for submission?
 
-**A:** _[Your answer here]_
+**A:** Priority based on cluster novelty, patch mode, and bug type.
+
+**Priority Assignment:**
+- **New clusters:** [Priority 8-10, sent 3 times with "generic" patch mode](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L546-L548)
+- **Active tasks:** [Priority 3-7 with "fast" patch mode](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L395-L398)
+- **Timeout/OOM:** [Priority 10 via dedicated queue](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L350)
+
+**Submission Strategy:**
+- [One representative per cluster: smallest bug_profile_id](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/utils/db.py#L308-L310)
+- [Cluster representatives sent to patch queue](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L522-L524)
+- Avoids submitting duplicate bugs from same cluster
 
 
 ## Fallback Mechanisms
 **Q:** What fallback strategies exist when advanced techniques fail? (vanilla libFuzzer fallback, static-only mode)
 
-**A:** _[Your answer here]_
+**A:** No fallback strategies found - components run in parallel with fixed resources.
 
 
 # Patch Generation
