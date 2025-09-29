@@ -450,44 +450,263 @@ augmentation?
 # Patch Generation
 **Q:** What patch generation strategies are employed?
 
-**A:** _[Your answer here]_
+**A:** LLM-based patch generation with dual-mode strategy and exhaustive parameter exploration:
+
+**Dual-Mode Architecture**:
+- **Generic Mode** ([32 configurations](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L36-L46)): Exhaustive grid search for new bug clusters
+  - Parameters: `counterexample_num ∈ {0, 3}` × `temperature ∈ {0, 0.3, 0.7, 1}` × `auto_hint ∈ {True, False}` = 32 combinations
+  - Execution: Sequential exploration until valid patch found
+  - Priority: 8-10 (high priority)
+- **Fast Mode** ([single random config](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L27-L35)): Quick single-shot attempt for known patterns
+  - Random temperature, random auto_hint, no counterexamples
+  - Max iterations: 15 (vs. 30 in generic mode)
+  - Priority: 3-7 (medium) or 0 (auto-fallback)
+
+**LLM Tool-Based Agent System**:
+- **Tool APIs** ([C/C++](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/default.py#L14-L68), [Java](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/proxy/default.py#L6-L39)):
+  - `viewcode`: Line-numbered code viewing
+  - `locate`: Symbol definition lookup via LSP (clangd for C/C++, tree-sitter for Java)
+  - `validate`: Patch validation via build + PoC replay
+- **Auto-Hint** (C/C++ only): [Character-level LSP hover analysis](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/proxy/internal.py#L43-L68) on stack trace lines
+- **Counterexamples**: [Random sampling](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L115-L130) of up to 3 failed patches
+- **Prompting**: [Language-specific prompts](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py) with psychological techniques ("ten dollar tip", "save thousands of lives")
+
+**Multi-Model Support**:
+- Models: Claude-4-opus ([patch-claude](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/patch-claude/values.yaml#L2)), GPT-4.1 ([patch-gpt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/charts/patch-gpt/values.yaml#L1))
+- Replicas: [8 patch-claude pods](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L205), [1 patch-gpt pod](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L212)
+
+**Workflow Strategy**:
+- New clusters: [3× generic mode messages](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L543-L548) (priority 8-10)
+- Existing clusters: [1× fast mode per cluster](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L395-L398) (priority 3-7)
+- Every message: [Auto-enqueue fast fallback](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patch_generator/main.py#L40-L62) (priority 0)
 
 ---
 
 **Q:** How are patches validated? (crash reproduction, regression tests, functional tests, post-patch fuzzing)
 
-**A:** _[Your answer here]_
+**A:** Three-stage validation with PoC-centric approach; functional tests NOT implemented:
+
+**Validation Pipeline** ([task.py#L83-L113](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L83-L113)):
+
+1. **Patch Format Validation** ([builder.py#L69-L79](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/builder/builder.py#L69-L79)):
+   - Uses `git apply` to verify syntax
+   - Rejects empty patches
+   - Returns `InvalidPatchFormat` if fails
+
+2. **Build Verification** ([task.py#L89-L94](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L89-L94)):
+   - Compiles patched code using OSS-Fuzz infrastructure
+   - Returns `BuildFailed` or `BuildTimeout` on errors
+   - Ensures patch doesn't break compilation
+
+3. **PoC Replay Testing** ([task.py#L96-L104](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L96-L104)):
+   - Runs original PoCs against patched binary
+   - Returns `BugDetected` if crash still occurs
+   - Success means vulnerability is fixed
+
+4. **Functional Testing** ❌ **NOT IMPLEMENTED** ([task.py#L106-L111](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L106-L111)):
+   - `function_test()` method is [empty stub](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/builder/builder.py#L104)
+   - Always passes (no regression testing)
+   - Project test suites are not executed
+
+**Cross-Profile Validation** (Patch Deduplication):
+- [Reproducer component](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patch_generator/main.py#L126-L131) tests patches across different bug profiles
+- If two patches from different profiles fix each other's PoCs → considered duplicates
+- Only one patch submitted to avoid accuracy multiplier penalty
+
+**No Post-Patch Fuzzing**:
+- No continuous fuzzing after patch generation
+- Validation happens once during patch generation only
 
 ---
 
 **Q:** Are build processes optimized for patching? (incremental builds, cached compilation artifacts)
 
-**A:** _[Your answer here]_
+**A:** No incremental build optimization; full rebuilds for each patch validation attempt:
+
+**Build Process**:
+- Each patch triggers [full OSS-Fuzz build](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/builder/builder.py#L81-L102) from scratch
+- Uses standard OSS-Fuzz `compile` scripts without modifications
+- [Redis Queue-based build system](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/prime-build/run_build_job.py) coordinates builds
+- Docker-in-Docker execution for isolation
+
+**No Incremental Build Support**:
+- No ccache or sccache implementation
+- No build artifact caching between patch attempts
+- No dependency tracking for selective recompilation
+- Fresh compilation every validation iteration
+
+**Build Isolation**:
+- [Git reset --hard + clean -fdx](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/builder/builder.py#L69-L70) before each patch application
+- Ensures clean state but prevents build optimization
+
+**Trade-off**:
+- Simplicity and correctness over speed
+- Avoids build cache corruption issues
+- Consistent with "Keep It Simple & Stable" philosophy
 
 ---
 
 **Q:** Are there bug-type-specific patching strategies?
 
-**A:** _[Your answer here]_
+**A:** Yes - extensive CWE-based repair advice dynamically injected into prompts:
+
+**CWE Classification System** ([cwe.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py)):
+
+- [40+ CWE types recognized](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py#L4-L57) from sanitizer reports via regex patterns
+- **AddressSanitizer**: heap/stack buffer overflow, use-after-free, double-free, null dereference, memory leak
+- **MemorySanitizer**: uninitialized memory
+- **UndefinedBehaviorSanitizer**: undefined behavior
+- **Jazzer**: injection attacks (SQL, LDAP, command, XPath), path traversal, RCE, SSRF
+
+**Bug-Type-Specific Repair Advice**:
+
+Each CWE type has:
+- [Specific description](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py#L59-L105) explaining the vulnerability nature
+- [Tailored repair advice](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py#L107-L280) with 3-4 concrete repair steps
+
+Examples:
+- **Buffer overflow**: "Replace unsafe functions like memcpy, strcpy with strncpy, snprintf"
+- **Use-after-free**: "Set pointers to NULL after freeing; track allocations systematically"
+- **SQL injection**: "Use parameterized queries or prepared statements to separate SQL code from user input"
+
+**Dynamic Injection Mechanism** ([address.py#L101-L112](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/address.py#L101-L112)):
+
+```python
+summary = (
+    f"The sanitizer detected a {self.cwe.value} vulnerability. "
+    f"The explanation of the vulnerability is: {CWE_DESCRIPTIONS[self.cwe]}. "
+    f"Here is the detail: \n\n{self.purified_content}\n\n"
+    f"To fix this issue, follow the advice below:\n\n{CWE_REPAIR_ADVICE[self.cwe]}"
+)
+```
+
+The `.summary` property is [injected into user prompt](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L75) as `{report}` variable, providing bug-type-specific guidance to LLM.
+
+**All Sanitizers Include CWE Advice**:
+- [AddressSanitizerReport](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/address.py#L109), [MemorySanitizerReport](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/memory.py#L67), [UndefinedBehaviorSanitizerReport](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/undefined.py#L65)
+- [JazzerSanitizerReport](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/jazzer.py#L84), [JavaNativeErrorReport](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/java_native.py#L44)
+
+**No Sanitizer-Specific Prompt Templates**:
+- C/C++ prompt always says "asan report" regardless of actual sanitizer (ASAN/MSAN/UBSAN/Leak)
+- No separate templates per sanitizer type
+- Sanitizer-specific info comes through dynamic `{report}` content
+
+**Language-Specific Implementations**:
+- **C/C++**: [CLikeAgent](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py) with clangd LSP, LLVM AST
+- **Java**: [JavaAgent](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/common.py) with tree-sitter
+- Different prompt templates ([C/C++](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L72-L80), [Java](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/prompt.py#L82-L90))
+
+**Uniform Parameter Exploration**:
+- All bug types use same [32-configuration grid search](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/generator.py#L36-L46) (temperature, counterexamples, auto-hint)
+- No per-CWE parameter tuning
+- Specialization via **prompt content** (CWE-specific repair advice), not parameter values
 
 ---
 
 **Q:** Does the CRS generate patches without proof-of-vulnerability (no-PoV patches)?
 
-**A:** _[Your answer here]_
+**A:** No - all patches require PoV for generation and validation:
+
+**PoV-Mandatory Architecture**:
+- Patch generation only triggered when [bug profile exists](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/triage/task_handler.py#L543) (requires triage-validated crash)
+- Each patch must pass [PoC replay validation](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L96-L104) showing crash is fixed
+- [PatchTask initialization](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/task.py#L16-L29) requires `pocs` parameter
+
+**SARIF-to-Patch Pipeline Not Implemented**:
+- SARIF component validates reports independently
+- No direct path from SARIF findings to patch generation
+- Only fuzzing-discovered crashes trigger patching
+
+**Workflow**:
+1. Fuzzer finds crash → Triage validates → Creates bug profile with PoC
+2. Bug profile sent to patch queue with PoC attached
+3. Patch agent generates fix using [sanitizer report + PoC](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L120-L128)
+4. Validation requires PoC no longer crashes
+
+**No Speculative Patching**:
+- No static-analysis-only patch generation
+- No preventive patches based on code patterns
+- All patches are reactive to discovered vulnerabilities
 
 
 # SARIF
 **Q:** How are SARIF reports validated? (PoV-based validation, static verification, no-PoV)
 
-**A:** _[Your answer here]_
+**A:** AI-first validation with language-specific strategies; Java uses no-PoV, C/C++ uses PoV when available:
+
+**Core Design**: LLM-based analysis is primary validation mechanism for all languages
+
+**Java/JVM - Direct AI Validation (No-PoV)** ([tasks.py#L88-L145](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L88-L145)):
+- Single-phase LLM analysis using [MCP Agent framework](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/main.py#L25-L87)
+- Agent has autonomous filesystem access with [tree-sitter tools](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/main.py#L30-L34)
+- [Tri-fold result](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L130-L138): `correct` (TRUE) | `incorrect` (FALSE) | other (abstain)
+- Up to 20 retry attempts for reliability
+- **No empirical validation**: Relies entirely on static analysis without runtime evidence
+
+**C/C++ - Multi-Phase Validation** ([seeds.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py)):
+
+**Phase 1: Preliminary Check (No-PoV)** ([seeds.py#L124-L170](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L124-L170)):
+- Same LLM evaluator as Java with `--preliminary` flag
+- Conservative prompt: "only claim incorrect if confident enough"
+- Outcomes:
+  - `assessment == 'correct'` → Return TRUE
+  - `assessment == 'incorrect'` → Return FALSE
+  - Any other value → Fall through to Phase 2
+
+**Phase 2: Crash-Based Validation (Has-PoV)** ([seeds.py#L173-L377](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L173-L377)):
+- Triggered only when preliminary check is uncertain
+- [Polls BugProfiles table](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L218-L231) for ALL crashes with same `task_id`
+- For each crash: [LLM determines if crash validates SARIF](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L279-L293)
+- **No explicit crash-SARIF matching**: AI infers correlation from stack traces vs SARIF locations
+- [First match wins](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/seeds.py#L353-L361): ANY crash validating SARIF returns TRUE
+
+**Inactive Strategies** ([tasks.py#L155-L158](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L155-L158)):
+- **Directed Fuzzing**: Fully implemented but [commented out](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/checkers/directed_fuzzing.py)
+- Would have actively fuzzed SARIF-reported vulnerabilities
+- Disabled due to computational expense and reliability concerns
+
+**AI Models Used**:
+- [Dual-model with provider toggle](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/tasks.py#L184) (OpenAI/Anthropic)
+- System prompt: [prompts.py#L1-L21](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/crs-prime-sarif-evaluator/evaluator/prompts.py#L1-L21)
 
 ---
 
 # Delta Mode
 **Q:** What technical adaptations are made for delta mode? (harness prioritization, vulnerability candidate ranking, LLM context specialization)
 
-**A:** _[Your answer here]_
+**A:** Directed fuzzing with program slicing to target modified functions; minimal LLM context adaptation:
+
+**Directed Fuzzing Component** ([daemon.py](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py)):
+
+**Patch Analysis** ([_handle_delta_fuzzing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L185)):
+- Extracts [modified functions from delta diff](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L185)
+- Identifies target functions for focused fuzzing
+
+**Program Slicing Integration**:
+- **C/C++**: [LLVM-based slicing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/slice/slice.py#L66-L73) extracts call graphs with `--callgraph=true --slicing=true`
+- **Java**: [IBM WALA bytecode slicing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/javaslicer/src/main/java/org/b3yond/SliceCmdGenerator.java)
+- Results guide [AFL++ allowlist generation](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py#L252-L260) for selective instrumentation
+- [Coordination via RabbitMQ](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/daemon/daemon.py) queues and [PostgreSQL DirectedSlice model](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/db/models/directed_slice.py)
+
+**Fuzzer Execution**:
+- [AFL++ directed fuzzing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/directed/src/modules/fuzzer_runner.py#L149-L154) with allowlist targeting modified functions
+- [JavaDirected fuzzing](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L147) for Java delta tasks
+- [8 replicas with KEDA auto-scaling](https://github.com/Team-Atlanta/42-afc-crs/blob/main/deployment/crs-k8s/b3yond-crs/values.prod.yaml#L152-L157)
+
+**Minimal Harness Prioritization**:
+- No explicit harness ranking mechanism
+- All harnesses fuzzed with focus on modified function paths
+
+**No Vulnerability Candidate Ranking**:
+- Traditional fuzzing approach without ML-based candidate scoring
+- Coverage-guided fuzzing discovers vulnerabilities naturally
+
+**Limited LLM Context Specialization**:
+- **SeedGen**: No delta-specific seed generation strategies
+- **PatchAgent**: Same prompts and tools for delta and full-scan tasks
+- **SARIF**: [LLM diff analyzer mentioned](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/sarif/src/daemon.py) but not specialized for delta mode
+
+**Architecture**: Traditional directed fuzzing (slicing + allowlist instrumentation) rather than LLM-guided vulnerability localization
 
 
 # From ASC to AFC
@@ -546,7 +765,8 @@ augmentation?
   between them and find that slicing + AFL++/SeedGen works better??
   Or for easier and robust implementation? C/Java slicer + stock AFL++/Jazzer?
 - Why no dict_gen for C? only Java. (Or I miss it??)
-
-# TODO:
-- top SARIF score
-- check their blog post & TR
+- Why only AI-based analysis for SARIF report in Java?
+- Based on those questions? Do you implement more features for C because of
+  lacking of human powers or other considerations?
+- Do you do post-aixcc analysis why you perform so well on SARIF to get
+  near-perfect scores?

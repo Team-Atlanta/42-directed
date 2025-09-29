@@ -116,17 +116,23 @@ Your assistance is VERY IMPORTANT to the security research and can save thousand
 
 #### Task-Specific Variations
 
-**C/C++ User Prompt**:
+**C/C++ User Prompt** ([`prompt.py#L72-L80`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/prompt.py#L72-L80)):
 ```
 Now I want to patch the {project} program, here is the asan report
 {report}
 ```
 
-**Java User Prompt**:
+**Java User Prompt** ([`prompt.py#L82-L90`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/java/prompt.py#L82-L90)):
 ```
 Now I want to patch the {project} program, here is the jazzer report
 {report}
 ```
+
+**Note on Sanitizer-Specific Prompts**:
+- The C/C++ prompt template **always says "asan report"** regardless of actual sanitizer type (ASAN/MSAN/UBSAN/LeakSanitizer)
+- No separate prompt templates for different sanitizer types
+- Sanitizer-specific information comes through the `{report}` variable content (CWE type + repair advice)
+- This is a generic prompt with dynamic content, not sanitizer-specific prompt templates
 
 **Technical Instructions**:
 - **Stack Trace Analysis**: "You can use the stack trace to identify a fix point for the bug"
@@ -142,6 +148,48 @@ Both prompts include placeholder for counterexample feedback:
 ```
 
 This enables the basic counterexample system where failed patches are included as examples of what NOT to do.
+
+#### CWE-Based Repair Advice Integration
+
+**Bug-Type-Specific Guidance** ([`cwe.py`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py)):
+
+The `{report}` variable in user prompts is dynamically enriched with CWE-specific repair advice via the sanitizer report's `.summary` property:
+
+**Report Structure** ([`address.py#L101-L112`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/address.py#L101-L112)):
+```python
+summary = (
+    f"The sanitizer detected a {self.cwe.value} vulnerability. "
+    f"The explanation of the vulnerability is: {CWE_DESCRIPTIONS[self.cwe]}. "
+    f"Here is the detail: \n\n{self.purified_content}\n\n"
+    f"To fix this issue, follow the advice below:\n\n{CWE_REPAIR_ADVICE[self.cwe]}"
+)
+```
+
+**40+ CWE Types with Tailored Advice** ([`cwe.py#L59-L280`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/cwe.py#L59-L280)):
+- Each CWE has specific **description** explaining the vulnerability nature
+- Each CWE has 3-4 concrete **repair steps** tailored to that bug type
+
+**Examples**:
+- **Heap buffer overflow**: "Replace unsafe functions like memcpy, strcpy with strncpy, snprintf"
+- **Use-after-free**: "Set pointers to NULL after freeing; track allocations systematically"
+- **Null dereference**: "Validate pointer values before dereferencing; implement default values"
+
+**All Sanitizer Types Include CWE Advice**:
+- [`AddressSanitizerReport`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/address.py#L109)
+- [`MemorySanitizerReport`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/memory.py#L67)
+- [`UndefinedBehaviorSanitizerReport`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/undefined.py#L65)
+- [`JazzerSanitizerReport`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/jazzer.py#L84)
+- [`JavaNativeErrorReport`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/parser/java_native.py#L44)
+
+**Injected into User Prompt** ([`common.py#L72-75`](https://github.com/Team-Atlanta/42-afc-crs/blob/main/components/patchagent/patchagent/agent/clike/common.py#L75)):
+```python
+self.prompt.invoke(
+    report=self.task.report.summary,  # Contains CWE description + repair advice
+    ...
+)
+```
+
+This means the LLM receives **bug-type-specific repair instructions** for every patch task, even though parameter exploration (temperature, counterexamples, auto-hint) remains uniform across all bug types.
 
 ## Prompt Engineering Techniques
 
