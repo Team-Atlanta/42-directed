@@ -1,0 +1,7 @@
+# POV Generation Strategy Summary
+
+This CRS combines LLM-based seed generation with fuzzing, where fuzzing is the primary driver and LLM's core role is to improve fuzzing coverage by providing high-quality seeds. The fuzzing pipeline consists of three complementary fuzzers: an AFL++ based fuzzer with multiple parallel instances under different sanitizer configurations, a default libfuzzer deployed concurrently in parallel instances, and a directed fuzzer used specifically for delta mode that targets changed code locations via AFL++ allowlist-based selective instrumentation. Fuzzers periodically pull new seeds from a shared database, and leverage corpus mapping at initialization to quickly match pre-collected corpus (from OSS-Fuzz) suited for the target project.
+
+On the LLM side, multiple agents operate across different modes for delta mode and full mode analysis. The MCP-based agent uses tool calling (filesystem browsing and tree-sitter AST analysis) for initial code analysis, while subsequent agents receive pre-analyzed context and coverage feedback through prompts. Agents follow a fixed iterative workflow with bounded iterations to generate and refine seed generator scripts. The produced seeds are stored in the database and shared with fuzzers to improve coverage.
+
+The overall strategy is designed to be language-agnostic for both C/C++ and Java, but due to engineering constraints, some features are not fully implemented for Java. Many techniques originate from academic research but have been adapted with practical improvements for competition use.

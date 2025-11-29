@@ -9,6 +9,7 @@ The CRS consists of three main components:
 ## 1. Bug Finding
 A comprehensive bug discovery pipeline with multiple complementary approaches:
 
+- **[POV Generation Strategy Summary](pov-gen-sum.md)** - High-level overview of the LLM + Fuzzing collaboration
 - **[Fuzzing Components](fuzzing.md)** - Core fuzzing engines
   - [BandFuzz](bandfuzz.md) - Advanced ensemble fuzzing framework
   - [PrimeFuzz](primefuzz.md) - Prioritized fuzzing approach
