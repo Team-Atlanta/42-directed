@@ -30,6 +30,7 @@
   - [Corpus Management](./corpus_grabber.md)
 
 - [Patch Generation](./patch_agent.md)
+  - [SoK: Patch Component Summary](./sok-patch-summary.md)
   - [PatchAgent Prompts](./patchagent-prompts.md)
   - [Patch Validation](./patchagent-validation.md)
   - [Counterexample Sampling Strategy](./patchagent-counterexample-sampling.md)
