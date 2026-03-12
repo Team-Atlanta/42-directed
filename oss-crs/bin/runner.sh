@@ -123,4 +123,21 @@ fi
 # AFL++ Execution
 # =============================================================================
 
-# AFL++ master/secondary execution added in Task 2
+NUM_CORES=${#CORES[@]}
+HARNESS="$HARNESS_PATH"
+
+echo "[runner] Launching AFL++ with $NUM_CORES instances on cores: ${CORES[*]}"
+
+# Launch main instance (-M) on first core (RUN-07)
+# Use explicit -b core binding to avoid Docker CPU affinity issues
+afl-fuzz -M main -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[0]}" -- "$HARNESS" @@ &
+MAIN_PID=$!
+echo "[runner] Started main instance (PID $MAIN_PID) on core ${CORES[0]}"
+
+# Launch secondary instances (-S) on remaining cores (RUN-07)
+for ((i=1; i<NUM_CORES; i++)); do
+    afl-fuzz -S "secondary$i" -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[$i]}" -- "$HARNESS" @@ &
+    echo "[runner] Started secondary$i instance on core ${CORES[$i]}"
+done
+
+echo "[runner] All $NUM_CORES AFL++ instances launched"
