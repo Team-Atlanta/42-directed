@@ -11,6 +11,10 @@ prepare_phase:
   hcl: oss-crs/docker-bake.hcl
 
 target_build_phase:
+  - name: slicer
+    dockerfile: oss-crs/dockerfiles/slicer.Dockerfile
+    outputs:
+      - slice
   - name: build
     dockerfile: oss-crs/dockerfiles/builder.Dockerfile
     outputs:
