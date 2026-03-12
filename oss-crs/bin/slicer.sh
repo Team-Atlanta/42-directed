@@ -1,5 +1,5 @@
 #!/bin/bash
-# Slicer entrypoint - fetches diff, parses for changed functions, submits slice target
+# Slicer entrypoint - fetches diff, parses for changed functions, runs LLVM slicing, generates allowlist
 #
 # Environment variables:
 #   SRC             - Source directory containing the project (required)
@@ -9,6 +9,7 @@
 #
 # Output:
 #   /artifacts/slice/slice_target_functions.txt - "path function_name" lines
+#   /artifacts/slice/AFL_LLVM_ALLOWLIST - functions to instrument
 
 set -e
 
@@ -61,20 +62,72 @@ if [ "$FUNC_COUNT" -gt 20 ]; then
     echo "[slicer] ... and $((FUNC_COUNT - 20)) more"
 fi
 
-# Step 3: Placeholder for bitcode compilation (Plan 02)
-# Will compile target to LLVM bitcode using writebc.so
+# Step 3: Compile target to LLVM bitcode
+echo "[slicer] Compiling target to LLVM bitcode..."
+BITCODE_DIR="$SRC/$PROJECT_NAME/42_aixcc_bitcode"
+mkdir -p "$BITCODE_DIR"
 
-# Step 4: Placeholder for LLVM analyzer (Plan 02)
-# Will run static analyzer to find code paths to target functions
+# Set compiler wrappers for bitcode extraction
+export CC=/usr/local/bin/san-clang
+export CXX=/usr/local/bin/san-clang++
+export WRITEBC_DIR="$BITCODE_DIR"
 
-# Step 5: Placeholder for allowlist generation (Plan 02)
-# Will generate AFL_LLVM_ALLOWLIST from slice results
+# Run the target's compile script (OSS-Fuzz convention)
+cd "$SRC/$PROJECT_NAME"
+timeout "${SLICE_TIMEOUT}" compile || {
+    echo "[slicer] ERROR: Bitcode compilation failed or timed out. Aborting."
+    exit 1
+}
+
+# Verify bitcode was generated
+BC_COUNT=$(find "$BITCODE_DIR" -name "*.bc" | wc -l)
+if [ "$BC_COUNT" -eq 0 ]; then
+    echo "[slicer] ERROR: No bitcode files generated. Aborting."
+    exit 1
+fi
+echo "[slicer] Generated $BC_COUNT bitcode files"
+
+# Step 4: Run LLVM analyzer for slicing
+echo "[slicer] Running LLVM analyzer..."
+SLICE_OUTPUT="$OUT/slice_results"
+mkdir -p "$SLICE_OUTPUT"
+
+# Find all .bc files
+BC_FILES=$(find "$BITCODE_DIR" -name "*.bc" | tr '\n' ' ')
+
+timeout "${SLICE_TIMEOUT}" /usr/local/bin/analyzer \
+    --srcroot="$SRC/$PROJECT_NAME" \
+    --callgraph=true \
+    --slicing=true \
+    --output="$SLICE_OUTPUT" \
+    --multi=/tmp/slice_target_functions.txt \
+    $BC_FILES || {
+    echo "[slicer] ERROR: LLVM analyzer failed or timed out. Aborting."
+    exit 1
+}
+
+echo "[slicer] Analyzer complete."
+
+# Step 5: Generate AFL_LLVM_ALLOWLIST
+echo "[slicer] Generating AFL_LLVM_ALLOWLIST..."
+python3 /scripts/generate_allowlist.py "$SLICE_OUTPUT" > "$OUT/AFL_LLVM_ALLOWLIST"
+
+# Verify non-empty allowlist (per user decision: no fallback)
+if [ ! -s "$OUT/AFL_LLVM_ALLOWLIST" ]; then
+    echo "[slicer] ERROR: Empty allowlist generated. Aborting (no fallback per user decision)."
+    exit 1
+fi
+
+echo "[slicer] Allowlist contains $(wc -l < "$OUT/AFL_LLVM_ALLOWLIST") functions"
 
 # Step 6: Submit slice output via libCRS
 echo "[slicer] Submitting slice output..."
 mkdir -p /artifacts/slice
 cp /tmp/slice_target_functions.txt /artifacts/slice/
-# Allowlist will be added by Plan 02
+cp "$OUT/AFL_LLVM_ALLOWLIST" /artifacts/slice/
+cp -r "$SLICE_OUTPUT"/*.slicing_func_result /artifacts/slice/ 2>/dev/null || true
+cp "$SLICE_OUTPUT"/callgraph.dot /artifacts/slice/ 2>/dev/null || true
+
 libCRS submit-build-output /artifacts/slice slice
 
 echo "[slicer] Slicing complete."
