@@ -37,12 +37,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Run Phase
 
-- [ ] **RUN-01**: runner.Dockerfile uses libCRS for artifact retrieval
-- [ ] **RUN-02**: Runner downloads build artifacts via `libCRS download-build-output build /out`
+- [x] **RUN-01**: runner.Dockerfile uses libCRS for artifact retrieval
+- [x] **RUN-02**: Runner downloads build artifacts via `libCRS download-build-output build /out`
 - [ ] **RUN-03**: Runner registers PoV output directory via `libCRS register-submit-dir pov`
 - [ ] **RUN-04**: Runner registers seed corpus directory via `libCRS register-submit-dir seed`
 - [ ] **RUN-05**: Runner parses OSS_CRS_CPUSET to determine AFL++ parallel instance count
-- [ ] **RUN-06**: Runner uses OSS_CRS_TARGET_HARNESS for fuzzer target binary
+- [x] **RUN-06**: Runner uses OSS_CRS_TARGET_HARNESS for fuzzer target binary
 - [ ] **RUN-07**: Runner executes AFL++ with appropriate master/slave configuration
 
 ### Validation
@@ -105,12 +105,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BLD-03 | Phase 2 | Complete |
 | BLD-04 | Phase 2 | Complete |
 | BLD-05 | Phase 2 | Complete |
-| RUN-01 | Phase 3 | Pending |
-| RUN-02 | Phase 3 | Pending |
+| RUN-01 | Phase 3 | Complete |
+| RUN-02 | Phase 3 | Complete |
 | RUN-03 | Phase 3 | Pending |
 | RUN-04 | Phase 3 | Pending |
 | RUN-05 | Phase 3 | Pending |
-| RUN-06 | Phase 3 | Pending |
+| RUN-06 | Phase 3 | Complete |
 | RUN-07 | Phase 3 | Pending |
 | VAL-01 | Phase 4 | Pending |
 | VAL-02 | Phase 4 | Pending |

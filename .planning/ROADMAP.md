@@ -87,5 +87,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Configuration | 1/1 | Complete   | 2026-03-12 |
 | 2. Build-Target | 2/4 | In Progress|  |
-| 3. Run | 0/2 | Not started | - |
+| 3. Run | 1/2 | In Progress|  |
 | 4. Validation | 0/1 | Not started | - |

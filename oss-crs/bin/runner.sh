@@ -91,9 +91,36 @@ parse_cpuset "$OSS_CRS_CPUSET"
 echo "[runner] Parsed ${#CORES[@]} CPU cores: ${CORES[*]}"
 
 # =============================================================================
+# Directory Setup and libCRS Registration
+# =============================================================================
+
+# Create AFL++ directories
+SYNC_DIR="/fuzzer/sync"
+mkdir -p "$SYNC_DIR"
+mkdir -p /fuzzer/crashes
+mkdir -p /fuzzer/queue
+
+# Register POV directory for continuous submission (RUN-03)
+libCRS register-submit-dir pov /fuzzer/crashes
+echo "[runner] Registered POV directory for continuous submission"
+
+# Register seed directory for continuous submission (RUN-04)
+libCRS register-submit-dir seed /fuzzer/queue
+echo "[runner] Registered seed directory for continuous submission"
+
+# Set up corpus directory
+if [ -d "$OUT_DIR/corpus" ] && [ "$(ls -A "$OUT_DIR/corpus" 2>/dev/null)" ]; then
+    CORPUS_DIR="$OUT_DIR/corpus"
+    echo "[runner] Using corpus from build artifacts: $CORPUS_DIR"
+else
+    CORPUS_DIR="/corpus"
+    mkdir -p "$CORPUS_DIR"
+    echo "AAAA" > "$CORPUS_DIR/initial"
+    echo "[runner] Created minimal corpus: $CORPUS_DIR/initial"
+fi
+
+# =============================================================================
 # AFL++ Execution
 # =============================================================================
 
-# AFL++ execution added in Plan 03-02
-
-echo "[runner] Runner setup complete. AFL++ execution will be added in Plan 03-02."
+# AFL++ master/secondary execution added in Task 2
