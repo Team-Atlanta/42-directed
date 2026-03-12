@@ -13,8 +13,8 @@ This roadmap delivers a standalone directed fuzzer for OSS-CRS that parses diff 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Configuration** - OSS-CRS discovery files: crs.yaml and docker-bake.hcl (completed 2026-03-12)
-- [ ] **Phase 2: Build-Target** - Diff parsing, slicing, AFL++ allowlist generation, instrumented compilation
-- [ ] **Phase 3: Run** - AFL++ execution with CPU allocation, POV/seed submission
+- [x] **Phase 2: Build-Target** - Diff parsing, slicing, AFL++ allowlist generation, instrumented compilation (completed 2026-03-12)
+- [x] **Phase 3: Run** - AFL++ execution with CPU allocation, POV/seed submission (completed 2026-03-12)
 - [ ] **Phase 4: Validation** - End-to-end verification with afc-freerdp-delta-01 benchmark
 
 ## Phase Details
@@ -45,10 +45,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Slicer container foundation (Dockerfile, libCRS, diff parsing)
-- [ ] 02-02-PLAN.md — Slicing pipeline (bitcode compilation, LLVM analyzer, allowlist generation)
-- [ ] 02-03-PLAN.md — Builder container (AFL++ compilation with allowlist)
-- [ ] 02-04-PLAN.md — Integration (crs.yaml update, verification checkpoint)
+- [x] 02-01-PLAN.md — Slicer container foundation (Dockerfile, libCRS, diff parsing)
+- [x] 02-02-PLAN.md — Slicing pipeline (bitcode compilation, LLVM analyzer, allowlist generation)
+- [x] 02-03-PLAN.md — Builder container (AFL++ compilation with allowlist)
+- [x] 02-04-PLAN.md — Integration (crs.yaml update, verification checkpoint)
 
 ### Phase 3: Run
 **Goal**: Run phase executes AFL++ against instrumented targets and streams POVs/seeds to OSS-CRS
@@ -62,8 +62,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Runner container foundation (Dockerfile, libCRS, artifact download, harness validation)
-- [ ] 03-02-PLAN.md — AFL++ execution (cpuset parsing, master/secondary instances, POV/seed submission)
+- [x] 03-01-PLAN.md — Runner container foundation (Dockerfile, libCRS, artifact download, harness validation)
+- [x] 03-02-PLAN.md — AFL++ execution (cpuset parsing, master/secondary instances, POV/seed submission)
 
 ### Phase 4: Validation
 **Goal**: End-to-end verification that the CRS works with a real benchmark
@@ -73,10 +73,10 @@ Plans:
   1. afc-freerdp-delta-01 benchmark passes prepare phase with CRS compose.yaml
   2. afc-freerdp-delta-01 benchmark passes build-target phase producing instrumented harness
   3. afc-freerdp-delta-01 benchmark passes run phase with AFL++ executing and finding instrumented paths
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — End-to-end validation script (prepare, build-target, run phases against benchmark)
 
 ## Progress
 
@@ -86,6 +86,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Configuration | 1/1 | Complete   | 2026-03-12 |
-| 2. Build-Target | 2/4 | In Progress|  |
-| 3. Run | 1/2 | In Progress|  |
-| 4. Validation | 0/1 | Not started | - |
+| 2. Build-Target | 4/4 | Complete   | 2026-03-12 |
+| 3. Run | 2/2 | Complete   | 2026-03-12 |
+| 4. Validation | 0/1 | Planning complete | - |
