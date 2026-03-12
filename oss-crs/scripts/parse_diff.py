@@ -15,11 +15,11 @@ Arguments:
 import os
 import sys
 from pathlib import Path
-from typing import Iterator, Set, Tuple
+from typing import Set, Tuple
 
 from unidiff import PatchSet
-import tree_sitter_c as tsc
-from tree_sitter import Language, Parser
+import tree_sitter_c as tsc  # type: ignore[import-untyped]
+from tree_sitter import Language, Parser  # type: ignore[import-untyped]
 
 
 # Supported C/C++ file extensions
@@ -30,7 +30,8 @@ ALL_EXTENSIONS = C_EXTENSIONS | CPP_EXTENSIONS
 
 def get_c_parser() -> Parser:
     """Create a tree-sitter parser for C code."""
-    parser = Parser(Language(tsc.language()))
+    c_language = Language(tsc.language())
+    parser = Parser(c_language)
     return parser
 
 
