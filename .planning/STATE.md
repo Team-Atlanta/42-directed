@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Roadmap creation complete
-last_updated: "2026-03-12T04:17:10.806Z"
-last_activity: 2026-03-11 — Roadmap created
+status: completed
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-12T04:48:57.724Z"
+last_activity: 2026-03-12 — Completed 02-03-PLAN.md
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 100
+  total_plans: 5
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** Parse diff, generate AFL allowlist from sliced code paths, and fuzz until we find bugs at changed locations.
-**Current focus:** Phase 1: Configuration
+**Current focus:** Phase 2: Build-Target
 
 ## Current Position
 
-Phase: 1 of 4 (Configuration) - COMPLETE
-Plan: 1 of 1 in current phase
-Status: Phase 1 complete
-Last activity: 2026-03-12 — Completed 01-01-PLAN.md
+Phase: 2 of 4 (Build-Target)
+Plan: 3 of 3 in current phase
+Status: Plan 02-03 complete
+Last activity: 2026-03-12 — Completed 02-03-PLAN.md
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
@@ -58,7 +58,10 @@ Progress: [██████████] 100%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- None yet
+- Builder downloads allowlist as file, exports as AFL_LLVM_ALLOWLIST env var
+- Allowlist copied to /artifacts/build for debugging purposes
+- [Phase 02]: SLICE_TIMEOUT default set to 600 seconds per research recommendation
+- [Phase 02]: Using tree-sitter-c for function detection in parse_diff.py
 
 ### Pending Todos
 
@@ -70,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11
-Stopped at: Roadmap creation complete
+Last session: 2026-03-12T04:48:57.722Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

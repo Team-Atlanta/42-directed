@@ -16,24 +16,24 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Build-Target Phase 1: Slice
 
-- [ ] **SLC-01**: slicer.Dockerfile uses `ARG target_base_image` and `FROM $target_base_image`
-- [ ] **SLC-02**: Slicer installs libCRS via standard COPY pattern
-- [ ] **SLC-03**: Slicer fetches diff via `libCRS fetch diff`
-- [ ] **SLC-04**: Slicer parses diff to extract changed file paths and line ranges
-- [ ] **SLC-05**: Slicer detects affected functions from diff using tree-sitter AST parsing
+- [x] **SLC-01**: slicer.Dockerfile uses `ARG target_base_image` and `FROM $target_base_image`
+- [x] **SLC-02**: Slicer installs libCRS via standard COPY pattern
+- [x] **SLC-03**: Slicer fetches diff via `libCRS fetch diff`
+- [x] **SLC-04**: Slicer parses diff to extract changed file paths and line ranges
+- [x] **SLC-05**: Slicer detects affected functions from diff using tree-sitter AST parsing
 - [ ] **SLC-06**: Slicer compiles target to LLVM bitcode for static analysis
 - [ ] **SLC-07**: Slicer runs LLVM analyzer to find code paths to changed functions
 - [ ] **SLC-08**: Slicer generates AFL_LLVM_ALLOWLIST from slice results
 - [ ] **SLC-09**: Slicer handles timeout/failure gracefully (fallback to function-level allowlist)
-- [ ] **SLC-10**: Slicer submits allowlist via `libCRS submit-build-output $OUT slice`
+- [x] **SLC-10**: Slicer submits allowlist via `libCRS submit-build-output $OUT slice`
 
 ### Build-Target Phase 2: Build
 
-- [ ] **BLD-01**: builder.Dockerfile uses `ARG target_base_image` and `FROM $target_base_image`
-- [ ] **BLD-02**: Builder installs libCRS via standard COPY pattern
-- [ ] **BLD-03**: Builder downloads slice output via `libCRS download-build-output slice`
-- [ ] **BLD-04**: Builder compiles target with AFL++ using downloaded allowlist
-- [ ] **BLD-05**: Builder submits instrumented harnesses via `libCRS submit-build-output $OUT build`
+- [x] **BLD-01**: builder.Dockerfile uses `ARG target_base_image` and `FROM $target_base_image`
+- [x] **BLD-02**: Builder installs libCRS via standard COPY pattern
+- [x] **BLD-03**: Builder downloads slice output via `libCRS download-build-output slice`
+- [x] **BLD-04**: Builder compiles target with AFL++ using downloaded allowlist
+- [x] **BLD-05**: Builder submits instrumented harnesses via `libCRS submit-build-output $OUT build`
 
 ### Run Phase
 
@@ -90,21 +90,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CFG-02 | Phase 1 | Complete |
 | CFG-03 | Phase 1 | Complete |
 | CFG-04 | Phase 1 | Complete |
-| SLC-01 | Phase 2 | Pending |
-| SLC-02 | Phase 2 | Pending |
-| SLC-03 | Phase 2 | Pending |
-| SLC-04 | Phase 2 | Pending |
-| SLC-05 | Phase 2 | Pending |
+| SLC-01 | Phase 2 | Complete |
+| SLC-02 | Phase 2 | Complete |
+| SLC-03 | Phase 2 | Complete |
+| SLC-04 | Phase 2 | Complete |
+| SLC-05 | Phase 2 | Complete |
 | SLC-06 | Phase 2 | Pending |
 | SLC-07 | Phase 2 | Pending |
 | SLC-08 | Phase 2 | Pending |
 | SLC-09 | Phase 2 | Pending |
-| SLC-10 | Phase 2 | Pending |
-| BLD-01 | Phase 2 | Pending |
-| BLD-02 | Phase 2 | Pending |
-| BLD-03 | Phase 2 | Pending |
-| BLD-04 | Phase 2 | Pending |
-| BLD-05 | Phase 2 | Pending |
+| SLC-10 | Phase 2 | Complete |
+| BLD-01 | Phase 2 | Complete |
+| BLD-02 | Phase 2 | Complete |
+| BLD-03 | Phase 2 | Complete |
+| BLD-04 | Phase 2 | Complete |
+| BLD-05 | Phase 2 | Complete |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
 | RUN-03 | Phase 3 | Pending |
