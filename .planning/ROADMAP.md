@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01-PLAN.md — Create CRS configuration files (crs.yaml, docker-bake.hcl, stub Dockerfiles)
+- [x] 01-01-PLAN.md — Create CRS configuration files (crs.yaml, docker-bake.hcl, stub Dockerfiles)
 
 ### Phase 2: Build-Target
 **Goal**: Build-target phase produces instrumented AFL++ harnesses targeting diff-identified code paths
@@ -41,12 +41,14 @@ Plans:
   2. Slicer generates AFL_LLVM_ALLOWLIST containing functions reachable from diff targets
   3. Builder compiles target with AFL++ using the generated allowlist
   4. Build artifacts (instrumented harnesses) are submitted via libCRS for run phase retrieval
-  5. Slice failure falls back to function-level allowlist rather than failing silently with empty allowlist
-**Plans**: TBD
+  5. Slice failure aborts build-target (no fallback per user decision)
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Slicer container foundation (Dockerfile, libCRS, diff parsing)
+- [ ] 02-02-PLAN.md — Slicing pipeline (bitcode compilation, LLVM analyzer, allowlist generation)
+- [ ] 02-03-PLAN.md — Builder container (AFL++ compilation with allowlist)
+- [ ] 02-04-PLAN.md — Integration (crs.yaml update, verification checkpoint)
 
 ### Phase 3: Run
 **Goal**: Run phase executes AFL++ against instrumented targets and streams POVs/seeds to OSS-CRS
@@ -83,6 +85,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Configuration | 1/1 | Complete   | 2026-03-12 |
-| 2. Build-Target | 0/2 | Not started | - |
+| 2. Build-Target | 0/4 | Planned | - |
 | 3. Run | 0/1 | Not started | - |
 | 4. Validation | 0/1 | Not started | - |
