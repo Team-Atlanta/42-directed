@@ -12,7 +12,8 @@
 ARG target_base_image=ghcr.io/aixcc-finals/base-builder:v1.3.0
 
 # Stage 1: Build LLVM tools (cached across targets)
-FROM ubuntu:22.04 AS llvm-builder
+# Use ubuntu:20.04 (focal) to match base-builder's glibc 2.31
+FROM ubuntu:20.04 AS llvm-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
