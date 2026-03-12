@@ -3,6 +3,17 @@
 
 #pragma once
 
+#include <llvm/Config/llvm-config.h>
+
+// LLVM 18+ renamed startswith/endswith to starts_with/ends_with
+#if LLVM_VERSION_MAJOR >= 18
+#define LLVM_STARTSWITH(str, prefix) (str).starts_with(prefix)
+#define LLVM_ENDSWITH(str, suffix) (str).ends_with(suffix)
+#else
+#define LLVM_STARTSWITH(str, prefix) (str).startswith(prefix)
+#define LLVM_ENDSWITH(str, suffix) (str).endswith(suffix)
+#endif
+
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Metadata.h>
@@ -34,7 +45,12 @@ inline llvm::StringRef getStringFromMD(llvm::MDNode *MD,
 
 static inline bool isFunctionPointer(llvm::Type *Ty) {
   llvm::PointerType *PTy = llvm::dyn_cast<llvm::PointerType>(Ty);
+#if LLVM_VERSION_MAJOR >= 15
+  // With opaque pointers, we can't determine element type - be conservative
+  return PTy != nullptr;
+#else
   return PTy && PTy->getElementType()->isFunctionTy();
+#endif
 }
 
 static inline bool isFunctionPointerOrVoid(llvm::Type *Ty) {
@@ -42,6 +58,10 @@ static inline bool isFunctionPointerOrVoid(llvm::Type *Ty) {
   if (!PTy)
     return false;
 
+#if LLVM_VERSION_MAJOR >= 15
+  // With opaque pointers, we can't determine element type - be conservative
+  return true;
+#else
   llvm::Type *subTy = PTy->getElementType();
   if (subTy->isFunctionTy())
     return true;
@@ -50,6 +70,7 @@ static inline bool isFunctionPointerOrVoid(llvm::Type *Ty) {
   // like in CPI
   if (subTy->isIntegerTy(8))
     return true;
+#endif
 
   return false;
 }
@@ -83,8 +104,8 @@ static inline std::string getScopeName(const llvm::StructType *Ty,
     return "";
   llvm::StringRef structName = Ty->getStructName();
   size_t dotPos = structName.rfind('.');
-  if (M && (structName.startswith("struct.anon") ||
-            structName.startswith("union.anon"))) {
+  if (M && (LLVM_STARTSWITH(structName, "struct.anon") ||
+            LLVM_STARTSWITH(structName, "union.anon"))) {
     llvm::StringRef rest = structName.substr(6);
     llvm::StringRef moduleName =
         llvm::sys::path::stem(M->getModuleIdentifier());
@@ -111,12 +132,19 @@ static inline std::string getStructId(llvm::StructType *STy, llvm::Module *M,
 }
 
 static inline std::string getStructId(llvm::Type *Ty, llvm::Module *M) {
+#if LLVM_VERSION_MAJOR >= 15
+  // With opaque pointers, we can't get element type from pointer
+  (void)M;
+  (void)Ty;
+  return "";
+#else
   if (Ty->isPointerTy()) {
     Ty = Ty->getContainedType(0);
     if (llvm::StructType *STy = llvm::dyn_cast<llvm::StructType>(Ty))
       return getScopeName(STy, M);
   }
   return "";
+#endif
 }
 
 static inline std::string getVarId(const llvm::GlobalValue *GV) {
@@ -156,7 +184,7 @@ static inline std::string getValueId(llvm::Value *V) {
     return getArgId(A);
   else if (llvm::CallInst *CI = llvm::dyn_cast<llvm::CallInst>(V)) {
     if (llvm::Function *F = CI->getCalledFunction())
-      if (F->getName().startswith("kint_arg.i"))
+      if (LLVM_STARTSWITH(F->getName(), "kint_arg.i"))
         return getLoadStoreId(CI).str();
     return getRetId(CI);
   } else if (llvm::isa<llvm::LoadInst>(V) || llvm::isa<llvm::StoreInst>(V)) {

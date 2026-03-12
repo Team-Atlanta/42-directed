@@ -29,8 +29,14 @@ using namespace llvm;
 
 static inline bool needAnnotation(Value *V) {
   if (PointerType *PTy = dyn_cast<PointerType>(V->getType())) {
+#if LLVM_VERSION_MAJOR >= 15
+    // With opaque pointers, be conservative
+    (void)PTy;
+    return true;
+#else
     Type *Ty = PTy->getElementType();
     return (Ty->isIntegerTy() || isFunctionPointer(Ty));
+#endif
   }
   return false;
 }
@@ -64,15 +70,15 @@ bool isAllocFn(StringRef name, int *size, int *flag) {
   if (!name.compare("kmalloc_array") || !name.compare("kcalloc"))
     return false;
 
-  if (name.startswith("kmalloc") || name.startswith("__kmalloc") ||
-      name.startswith("kzalloc")) {
+  if (LLVM_STARTSWITH(name, "kmalloc") || LLVM_STARTSWITH(name, "__kmalloc") ||
+      LLVM_STARTSWITH(name, "kzalloc")) {
     *size = 0;
     *flag = 1;
     return true;
   }
 
   // kmem_cache_alloc
-  if (name.startswith("kmem_cache_alloc") ||
+  if (LLVM_STARTSWITH(name, "kmem_cache_alloc") ||
       !name.compare("kmem_cache_zalloc")) {
     *size = -1;
     *flag = 1;
@@ -130,8 +136,8 @@ bool isAllocFn(StringRef name, int *size, int *flag) {
 		return 3;
 
 	// vmalloc
-	if (name.startswith("vmalloc") ||
-		name.startswith("vzalloc"))
+	if (LLVM_STARTSWITH(name, "vmalloc") ||
+		LLVM_STARTSWITH(name, "vzalloc"))
 		return -1; // don't really have flags
 
 	if (!name.compare("__vmalloc"))
@@ -254,6 +260,14 @@ std::string getStructId(Value *PVal, User::op_iterator &IS,
 
   Type *PTy = PVal->getType();
   if (PointerType *PtrTy = dyn_cast<PointerType>(PTy)) {
+#if LLVM_VERSION_MAJOR >= 15
+    // With opaque pointers, we can't get element type
+    (void)PtrTy;
+    (void)IS;
+    (void)IE;
+    (void)M;
+    return "";
+#else
     STy = dyn_cast<StructType>(PtrTy->getElementType());
     if (!STy) {
       /*
@@ -263,6 +277,7 @@ std::string getStructId(Value *PVal, User::op_iterator &IS,
       */
       return "";
     }
+#endif
   } else {
     fprintf(stderr, "[-] getStructId: PVal is not a pointer type\n");
     return "";
@@ -411,7 +426,7 @@ std::string getAnonStructId(Value *V, Module *M, StringRef Prefix) {
 		while (Ty->isPointerTy())
 			Ty = Ty->getContainedType(0);
 		if (StructType *STy = dyn_cast<StructType>(Ty)) {
-			if (!STy->getStructName().startswith("struct.anon")) {
+			if (!LLVM_STARTSWITH(STy->getStructName(), "struct.anon")) {
 				return STy->getStructName();
 			}
 		}

@@ -54,7 +54,7 @@ apt-get update && apt-get install -y $LLVM_DEP_PACKAGES --no-install-recommends
 # languages, projects, ...) is needed.
 # Check CMAKE_VERSION infra/base-images/base-clang/Dockerfile was released
 # recently enough to fully support this clang version.
-OUR_LLVM_REVISION=llvmorg-14.0.6
+OUR_LLVM_REVISION=llvmorg-18.1.8
 
 mkdir $SRC/chromium_tools
 cd $SRC/chromium_tools

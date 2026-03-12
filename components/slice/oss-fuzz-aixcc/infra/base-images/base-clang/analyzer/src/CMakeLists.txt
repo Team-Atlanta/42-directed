@@ -1,7 +1,20 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.13.4)
 project(KANALYZER)
 
 SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+
+# LLVM 18 cmake config expects zstd::libzstd_shared target
+# Create an alias if zstd was found but target doesn't exist
+find_package(zstd QUIET)
+if(NOT TARGET zstd::libzstd_shared)
+    find_library(ZSTD_LIBRARY NAMES zstd libzstd)
+    if(ZSTD_LIBRARY)
+        add_library(zstd::libzstd_shared UNKNOWN IMPORTED)
+        set_target_properties(zstd::libzstd_shared PROPERTIES
+            IMPORTED_LOCATION "${ZSTD_LIBRARY}")
+    endif()
+endif()
+
 find_package(LLVM REQUIRED CONFIG)
 
 # set(ZLIB_USE_STATIC_LIBS "ON")
@@ -10,18 +23,12 @@ message("suffix: ${CMAKE_FIND_LIBRARY_SUFFIXES}")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-# Set your project compile flags.
-# E.g. if using the C++ header files
-# you will need to enable C++14 support
-# for your compiler.
-# Check for C++14 support and set the compilation flag
-include(CheckCXXCompilerFlag)
-#CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-# if(COMPILER_SUPPORTS_CXX14)
-# 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fno-rtti -fPIC -Wall")
-# else()
-# 	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
-# endif()
+# LLVM 18 requires C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Use libstdc++ to match LLVM static libraries (built with GCC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fPIC -Wall -stdlib=libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libstdc++")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})

@@ -1,65 +1,65 @@
-# Stage 1: Build LLVM tools (cached across targets)
-# This stage compiles LLVM 14.0.6 with static analyzer and bitcode tools
-FROM ubuntu:22.04 AS llvm-builder
+# Global ARG for target base image (must be before first FROM)
+ARG target_base_image
 
+# Stage 1: Build custom components using target's LLVM
+FROM ${target_base_image} AS component-builder
+
+ENV SRC=/src
+ENV WORK=/work
+ENV DEBIAN_FRONTEND=noninteractive
+RUN mkdir -p $SRC $WORK
+
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    ninja-build \
-    git \
-    python3 \
-    libssl-dev \
-    zlib1g-dev \
-    curl \
-    ca-certificates \
-    && apt-get clean \
+    build-essential cmake ninja-build git python3 \
+    libssl-dev zlib1g-dev libzstd-dev curl ca-certificates llvm-18-dev \
+    libstdc++-10-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy LLVM build script and source from components
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/checkout_build_install_llvm.sh /build/
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/analyzer /build/analyzer
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/klaus /build/klaus
+# Copy and build analyzer
+COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/analyzer /src/analyzer
+WORKDIR /src/analyzer
+RUN mkdir -p build && cd build && \
+    cmake -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_EXE_LINKER_FLAGS="-L/usr/lib/x86_64-linux-gnu -lz" \
+          -DZLIB_LIBRARY_RELEASE=/usr/lib/x86_64-linux-gnu/libz.a \
+          -DZLIB_INCLUDE_DIR=/usr/include \
+          ../src && \
+    make -j$(nproc)
 
-WORKDIR /build
-RUN chmod +x checkout_build_install_llvm.sh && ./checkout_build_install_llvm.sh
+# Copy and build writebc.so
+COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/klaus /src/klaus
+WORKDIR /src/klaus/llvm_bitcode_writer
+RUN LLVM_CONFIG=/usr/lib/llvm-18/bin/llvm-config make -j$(nproc)
+
+# Copy and build compiler wrappers
+WORKDIR /src/klaus/compiler_wrapper
+RUN ./build.sh
 
 # Stage 2: Slicer runtime
-# Extends target base image with LLVM tools for bitcode compilation and slicing
-ARG target_base_image
 FROM ${target_base_image}
 
-# Copy pre-built LLVM tools from builder stage
-COPY --from=llvm-builder /usr/local/bin/clang* /usr/local/bin/
-COPY --from=llvm-builder /usr/local/bin/llvm-* /usr/local/bin/
-COPY --from=llvm-builder /usr/local/lib/writebc.so /usr/local/lib/
-COPY --from=llvm-builder /usr/local/bin/sancc /usr/local/bin/
-COPY --from=llvm-builder /usr/local/bin/san-clang* /usr/local/bin/
-COPY --from=llvm-builder /build/analyzer/build/lib/analyzer /usr/local/bin/analyzer
+# Copy built components from builder stage
+COPY --from=component-builder /src/analyzer/build/lib/analyzer /usr/local/bin/analyzer
+COPY --from=component-builder /src/klaus/llvm_bitcode_writer/writebc.so /usr/local/lib/
+COPY --from=component-builder /src/klaus/compiler_wrapper/sancc /usr/local/bin/
+COPY --from=component-builder /src/klaus/compiler_wrapper/san-clang /usr/local/bin/
+COPY --from=component-builder /src/klaus/compiler_wrapper/san-clang++ /usr/local/bin/
+COPY --from=component-builder /src/klaus/compiler_wrapper/san-gcc /usr/local/bin/
+COPY --from=component-builder /src/klaus/compiler_wrapper/san-g++ /usr/local/bin/
 
-# Install libCRS for artifact management
 COPY --from=libcrs . /opt/libCRS
 RUN /opt/libCRS/install.sh
 
-# Install Python dependencies for diff parsing and slicing
-# - tree-sitter-languages: Multi-language tree-sitter parser (used by diff_parser.py)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    && pip3 install --no-cache-dir \
-        tree-sitter-languages \
-    && apt-get clean \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip \
+    && pip3 install --no-cache-dir 'tree-sitter==0.21.3' 'tree-sitter-languages==1.10.2' \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy slice.py from components/slice (proven LLVM analyzer invocation)
 COPY components/slice/slice.py /scripts/slice.py
-
-# Copy diff_parser.py from components/directed (reused diff parsing logic)
 COPY components/directed/src/daemon/modules/diff_parser.py /scripts/diff_parser.py
-
-# Copy slicer scripts
 COPY oss-crs/bin/slicer.sh /slicer.sh
 COPY oss-crs/scripts/generate_allowlist.py /scripts/generate_allowlist.py
 RUN chmod +x /slicer.sh
 
-# Slicer entrypoint
 CMD ["/slicer.sh"]

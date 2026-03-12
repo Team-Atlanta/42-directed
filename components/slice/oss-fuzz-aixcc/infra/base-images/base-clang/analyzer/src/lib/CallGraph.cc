@@ -43,6 +43,10 @@ bool CallGraphPass::isCompatibleType(Type *T1, Type *T2) {
     if (!T2->isPointerTy())
       return false;
 
+#if LLVM_VERSION_MAJOR >= 15
+    // With opaque pointers, all pointers are compatible
+    return true;
+#else
     // Retrieve types of elements pointed
     Type *ElT1 = T1->getPointerElementType();
     Type *ElT2 = T2->getPointerElementType();
@@ -52,6 +56,7 @@ bool CallGraphPass::isCompatibleType(Type *T1, Type *T2) {
 
     // Recursively compare the types of elements pointed
     return isCompatibleType(ElT1, ElT2);
+#endif
 
   // Compare array types
   } else if (T1->isArrayTy()) {
@@ -528,8 +533,8 @@ void CallGraphPass::processInitializers(Module *M, Constant *C, GlobalValue *V,
           // Assign a new ID
           std::string new_id;
           if (!STy->isLiteral()) {
-            if (STy->getStructName().startswith("struct.anon.") ||
-                STy->getStructName().startswith("union.anon")) {
+            if (LLVM_STARTSWITH(STy->getStructName(), "struct.anon.") ||
+                LLVM_STARTSWITH(STy->getStructName(), "union.anon")) {
               if (Id.empty())
                 new_id = getStructId(STy, M, i);
             } else {

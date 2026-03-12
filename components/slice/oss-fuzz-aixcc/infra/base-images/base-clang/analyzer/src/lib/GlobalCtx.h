@@ -1,6 +1,17 @@
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
+#include <llvm/Config/llvm-config.h>
+
+// LLVM 18+ renamed startswith/endswith to starts_with/ends_with
+#if LLVM_VERSION_MAJOR >= 18
+#define LLVM_STARTSWITH(str, prefix) (str).starts_with(prefix)
+#define LLVM_ENDSWITH(str, suffix) (str).ends_with(suffix)
+#else
+#define LLVM_STARTSWITH(str, prefix) (str).startswith(prefix)
+#define LLVM_ENDSWITH(str, suffix) (str).endswith(suffix)
+#endif
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringExtras.h>

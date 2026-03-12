@@ -154,7 +154,7 @@ void doBasicInitialization(Module *M) {
       // external linkage always ends up with the function name
       StringRef FNameRef = F.getName();
       std::string FName = "";
-      if (FNameRef.startswith("__sys_"))
+      if (LLVM_STARTSWITH(FNameRef, "__sys_"))
         FName = "sys_" + FNameRef.str().substr(6);
       else
         FName = FNameRef.str();
