@@ -21,10 +21,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SLC-03**: Slicer fetches diff via `libCRS fetch diff`
 - [x] **SLC-04**: Slicer parses diff to extract changed file paths and line ranges
 - [x] **SLC-05**: Slicer detects affected functions from diff using tree-sitter AST parsing
-- [ ] **SLC-06**: Slicer compiles target to LLVM bitcode for static analysis
-- [ ] **SLC-07**: Slicer runs LLVM analyzer to find code paths to changed functions
-- [ ] **SLC-08**: Slicer generates AFL_LLVM_ALLOWLIST from slice results
-- [ ] **SLC-09**: Slicer handles timeout/failure gracefully (fallback to function-level allowlist)
+- [x] **SLC-06**: Slicer compiles target to LLVM bitcode for static analysis
+- [x] **SLC-07**: Slicer runs LLVM analyzer to find code paths to changed functions
+- [x] **SLC-08**: Slicer generates AFL_LLVM_ALLOWLIST from slice results
+- [x] **SLC-09**: Slicer handles timeout/failure gracefully (fallback to function-level allowlist)
 - [x] **SLC-10**: Slicer submits allowlist via `libCRS submit-build-output $OUT slice`
 
 ### Build-Target Phase 2: Build
@@ -95,10 +95,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SLC-03 | Phase 2 | Complete |
 | SLC-04 | Phase 2 | Complete |
 | SLC-05 | Phase 2 | Complete |
-| SLC-06 | Phase 2 | Pending |
-| SLC-07 | Phase 2 | Pending |
-| SLC-08 | Phase 2 | Pending |
-| SLC-09 | Phase 2 | Pending |
+| SLC-06 | Phase 2 | Complete |
+| SLC-07 | Phase 2 | Complete |
+| SLC-08 | Phase 2 | Complete |
+| SLC-09 | Phase 2 | Complete |
 | SLC-10 | Phase 2 | Complete |
 | BLD-01 | Phase 2 | Complete |
 | BLD-02 | Phase 2 | Complete |
