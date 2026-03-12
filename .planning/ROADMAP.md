@@ -59,10 +59,11 @@ Plans:
   2. Runner parses OSS_CRS_CPUSET to launch correct number of AFL++ master/slave instances
   3. POV output directory is registered and crashes are continuously submitted
   4. Seed corpus directory is registered for seed sharing
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Runner container foundation (Dockerfile, libCRS, artifact download, harness validation)
+- [ ] 03-02-PLAN.md — AFL++ execution (cpuset parsing, master/secondary instances, POV/seed submission)
 
 ### Phase 4: Validation
 **Goal**: End-to-end verification that the CRS works with a real benchmark
@@ -86,5 +87,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Configuration | 1/1 | Complete   | 2026-03-12 |
 | 2. Build-Target | 2/4 | In Progress|  |
-| 3. Run | 0/1 | Not started | - |
+| 3. Run | 0/2 | Not started | - |
 | 4. Validation | 0/1 | Not started | - |
