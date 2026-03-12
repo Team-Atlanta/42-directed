@@ -141,3 +141,54 @@ for ((i=1; i<NUM_CORES; i++)); do
 done
 
 echo "[runner] All $NUM_CORES AFL++ instances launched"
+
+# =============================================================================
+# Crash/Seed Monitor for Continuous Submission
+# =============================================================================
+
+# Initialize timestamp file for incremental copy
+touch /tmp/.last_crash_check
+touch /tmp/.last_seed_check
+
+# Background crash copier - copies crashes from all instances to registered POV directory
+(
+    while true; do
+        # Copy new crashes from all AFL++ instances to /fuzzer/crashes
+        find "$SYNC_DIR" -path "*/crashes/*" -type f -newer /tmp/.last_crash_check 2>/dev/null | while read -r crash; do
+            # Skip README.txt files that AFL++ creates
+            [[ "$(basename "$crash")" == "README.txt" ]] && continue
+            cp "$crash" /fuzzer/crashes/ 2>/dev/null || true
+        done
+        touch /tmp/.last_crash_check
+        sleep 5
+    done
+) &
+CRASH_MONITOR_PID=$!
+
+# Background seed copier - copies new seeds from all instances to registered seed directory
+(
+    while true; do
+        # Copy new queue items from all AFL++ instances to /fuzzer/queue
+        find "$SYNC_DIR" -path "*/queue/*" -type f -newer /tmp/.last_seed_check 2>/dev/null | while read -r seed; do
+            # Skip README.txt files and .state directories
+            [[ "$(basename "$seed")" == "README.txt" ]] && continue
+            [[ "$seed" == *".state"* ]] && continue
+            cp "$seed" /fuzzer/queue/ 2>/dev/null || true
+        done
+        touch /tmp/.last_seed_check
+        sleep 5
+    done
+) &
+SEED_MONITOR_PID=$!
+
+echo "[runner] Started crash/seed monitor for continuous submission (PIDs: $CRASH_MONITOR_PID, $SEED_MONITOR_PID)"
+
+# =============================================================================
+# Wait for AFL++ Execution
+# =============================================================================
+
+# Wait for all AFL++ instances to complete
+# This keeps the container running until fuzzing is done or killed
+wait
+
+echo "[runner] AFL++ execution complete"
