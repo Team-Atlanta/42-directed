@@ -28,10 +28,12 @@ RUN mkdir -p build && cd build && \
           ../src && \
     make -j$(nproc)
 
-# Copy and build writebc.so
+# Copy and build writebc.so - ABI fix v1.0-noop
+# IMPORTANT: Must use base image's llvm-config (/usr/local/bin) not system llvm-18-dev
+# to match the ABI of the clang binary that will load the plugin
 COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/klaus /src/klaus
 WORKDIR /src/klaus/llvm_bitcode_writer
-RUN LLVM_CONFIG=/usr/lib/llvm-18/bin/llvm-config make -j$(nproc)
+RUN LLVM_CONFIG=/usr/local/bin/llvm-config make -j$(nproc)
 
 # Copy and build compiler wrappers
 WORKDIR /src/klaus/compiler_wrapper
