@@ -58,6 +58,7 @@ namespace {
 class WriteBitcodePass : public PassInfoMixin<WriteBitcodePass> {
    public:
     PreservedAnalyses run(Module& M, ModuleAnalysisManager& MAM) {
+        try {
         if (const char* env = getenv("OUT")) {
             // if (const char* project = getenv("PROJECT_NAME")) {
                 std::filesystem::path outEnvPath = std::filesystem::absolute(env);
@@ -157,9 +158,14 @@ class WriteBitcodePass : public PassInfoMixin<WriteBitcodePass> {
             writeModuleBitcodeToFile(M, srcGuessPath.string() + ".bc");
 
         } while (false);
+        } catch (const std::exception& e) {
+            errs() << "[llvm_bitcode_writer] Exception caught: " << e.what() << "\n";
+        } catch (...) {
+            errs() << "[llvm_bitcode_writer] Unknown exception caught\n";
+        }
         return PreservedAnalyses::all();
     }
-    static bool isRequired() { return true; }
+    static bool isRequired() { return false; }  // Changed to false to allow skipping on errors
 
    private:
     // Calculate MD5 hash of file content
@@ -232,12 +238,12 @@ class WriteBitcodePass : public PassInfoMixin<WriteBitcodePass> {
 
 llvm::PassPluginLibraryInfo getWriteBitcodePluginInfo() {
     const auto callback = [](PassBuilder& PB) {
-        PB.registerPipelineEarlySimplificationEPCallback([](llvm::ModulePassManager& PM, OptimizationLevel Level) {
+        // LLVM 18+ uses void return type for extension point callbacks
+        PB.registerPipelineEarlySimplificationEPCallback([&](llvm::ModulePassManager& PM, OptimizationLevel Level) {
             PM.addPass(WriteBitcodePass());
-            return true;
         });
     };
-    return {LLVM_PLUGIN_API_VERSION, "WriteBitcode", "v0.4", callback};
+    return {LLVM_PLUGIN_API_VERSION, "WriteBitcode", "v0.5", callback};
 }
 
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {

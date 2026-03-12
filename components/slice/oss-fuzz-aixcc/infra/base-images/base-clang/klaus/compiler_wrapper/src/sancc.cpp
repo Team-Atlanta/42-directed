@@ -86,8 +86,10 @@ void build(const std::string& compiler_path, const std::vector<std::string>& ori
     std::vector<std::string> filtered_argv;
     std::vector<std::string> no_werror_argv;
     for (const auto& arg : orig_argv) {
-        if (!arg.starts_with("-O") && !arg.starts_with("-g") && 
-            !(arg.starts_with("-fsanitize=") && !arg.starts_with("-fsanitize=fuzzer")) && 
+        // Filter out: -O*, -g, ALL sanitizer flags (including fuzzer), -Werror
+        // For bitcode extraction, we want clean compilation without any sanitizers
+        if (!arg.starts_with("-O") && !arg.starts_with("-g") &&
+            !arg.starts_with("-fsanitize") &&  // Catches -fsanitize= and -fsanitize-*
             !arg.starts_with("-Werror")) {
             filtered_argv.push_back(arg);
         }

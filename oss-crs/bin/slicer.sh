@@ -19,8 +19,13 @@ if [ -z "$SRC" ]; then
     exit 1
 fi
 
-if [ -z "$PROJECT_NAME" ]; then
-    echo "[slicer] ERROR: PROJECT_NAME environment variable not set"
+# OSS_CRS_REPO_PATH is the actual source root (e.g., /src/FreeRDP)
+if [ -n "$OSS_CRS_REPO_PATH" ]; then
+    SRC_ROOT="$OSS_CRS_REPO_PATH"
+elif [ -n "$PROJECT_NAME" ]; then
+    SRC_ROOT="$SRC_ROOT"
+else
+    echo "[slicer] ERROR: Neither OSS_CRS_REPO_PATH nor PROJECT_NAME set"
     exit 1
 fi
 
@@ -47,7 +52,7 @@ echo "[slicer] Diff files fetched: $(ls "$DIFF_DIR" | wc -l) files"
 
 # Step 2: Parse diff to identify changed functions (reuses components/directed diff_parser.py)
 echo "[slicer] Parsing diff for changed functions..."
-python3 /scripts/diff_parser.py "$DIFF_DIR" "$SRC/$PROJECT_NAME" > /tmp/slice_target_functions.txt
+python3 /scripts/diff_parser.py "$DIFF_DIR" "$SRC_ROOT" > /tmp/slice_target_functions.txt
 
 # Check if any functions found
 if [ ! -s /tmp/slice_target_functions.txt ]; then
@@ -64,7 +69,7 @@ fi
 
 # Step 3: Compile target to LLVM bitcode
 echo "[slicer] Compiling target to LLVM bitcode..."
-BITCODE_DIR="$SRC/$PROJECT_NAME/42_aixcc_bitcode"
+BITCODE_DIR="$SRC_ROOT/42_aixcc_bitcode"
 mkdir -p "$BITCODE_DIR"
 
 # Set compiler wrappers for bitcode extraction
@@ -72,8 +77,32 @@ export CC=/usr/local/bin/san-clang
 export CXX=/usr/local/bin/san-clang++
 export WRITEBC_DIR="$BITCODE_DIR"
 
+# CACHE_BUST: 2025-03-12-v2
+# Disable ALL sanitizer/fuzzer instrumentation for bitcode extraction
+# The compile script will append SANITIZER_FLAGS/COVERAGE_FLAGS to CFLAGS
+# so we must set these to empty too
+export SANITIZER=none
+export SANITIZER_FLAGS=""
+export COVERAGE_FLAGS=""
+export FUZZING_ENGINE=none
+export CFLAGS="-fno-omit-frame-pointer"
+export CXXFLAGS="-fno-omit-frame-pointer -stdlib=libc++"
+export LIB_FUZZING_ENGINE=""
+export LIB_FUZZING_ENGINE_DEPRECATED=""
+
+# Debug: print our settings
+echo "[slicer] Bitcode extraction settings:"
+echo "[slicer]   SANITIZER=$SANITIZER"
+echo "[slicer]   SANITIZER_FLAGS=$SANITIZER_FLAGS"
+echo "[slicer]   FUZZING_ENGINE=$FUZZING_ENGINE"
+echo "[slicer]   CFLAGS=$CFLAGS"
+
+# Force clean build to avoid cached artifacts with sanitizer instrumentation
+# Many OSS-Fuzz targets check if build/ exists and skip cmake if so
+rm -rf "$SRC_ROOT/build"
+
 # Run the target's compile script (OSS-Fuzz convention)
-cd "$SRC/$PROJECT_NAME"
+cd "$SRC_ROOT"
 timeout "${SLICE_TIMEOUT}" compile || {
     echo "[slicer] ERROR: Bitcode compilation failed or timed out. Aborting."
     exit 1
