@@ -2,10 +2,10 @@
 # Slicer entrypoint - fetches diff, parses for changed functions, runs LLVM slicing, generates allowlist
 #
 # Environment variables:
-#   SRC             - Source directory containing the project (required)
-#   PROJECT_NAME    - Name of the project directory within SRC (required)
-#   OUT             - Output directory (default: /out)
-#   SLICE_TIMEOUT   - Timeout for slicing operations in seconds (default: 600)
+#   OSS_CRS_REPO_PATH - Source directory containing the project (required, set by oss-crs)
+#   PROJECT_NAME      - Name of the project (required, for logging)
+#   OUT               - Output directory (default: /out)
+#   SLICE_TIMEOUT     - Timeout for slicing operations in seconds (default: 600)
 #
 # Output:
 #   /artifacts/slice/slice_target_functions.txt - "path function_name" lines
@@ -14,8 +14,8 @@
 set -e
 
 # Validate required environment variables
-if [ -z "$SRC" ]; then
-    echo "[slicer] ERROR: SRC environment variable not set"
+if [ -z "$OSS_CRS_REPO_PATH" ]; then
+    echo "[slicer] ERROR: OSS_CRS_REPO_PATH environment variable not set"
     exit 1
 fi
 
@@ -24,12 +24,15 @@ if [ -z "$PROJECT_NAME" ]; then
     exit 1
 fi
 
+# Source root is the resolved repo path (effective workdir)
+SRC_ROOT="$OSS_CRS_REPO_PATH"
+
 # Set defaults
 OUT="${OUT:-/out}"
 SLICE_TIMEOUT="${SLICE_TIMEOUT:-600}"
 
 echo "[slicer] Starting slicer pipeline"
-echo "[slicer] SRC=$SRC, PROJECT_NAME=$PROJECT_NAME, OUT=$OUT"
+echo "[slicer] SRC_ROOT=$SRC_ROOT, PROJECT_NAME=$PROJECT_NAME, OUT=$OUT"
 echo "[slicer] SLICE_TIMEOUT=${SLICE_TIMEOUT}s"
 
 # Step 1: Fetch diff via libCRS
@@ -47,7 +50,7 @@ echo "[slicer] Diff files fetched: $(ls "$DIFF_DIR" | wc -l) files"
 
 # Step 2: Parse diff to identify changed functions (reuses components/directed diff_parser.py)
 echo "[slicer] Parsing diff for changed functions..."
-python3 /scripts/diff_parser.py "$DIFF_DIR" "$SRC/$PROJECT_NAME" > /tmp/slice_target_functions.txt
+python3 /scripts/diff_parser.py "$DIFF_DIR" "$SRC_ROOT" > /tmp/slice_target_functions.txt
 
 # Check if any functions found
 if [ ! -s /tmp/slice_target_functions.txt ]; then
@@ -64,7 +67,7 @@ fi
 
 # Step 3: Compile target to LLVM bitcode
 echo "[slicer] Compiling target to LLVM bitcode..."
-BITCODE_DIR="$SRC/$PROJECT_NAME/42_aixcc_bitcode"
+BITCODE_DIR="$SRC_ROOT/42_aixcc_bitcode"
 mkdir -p "$BITCODE_DIR"
 
 # Set compiler wrappers for bitcode extraction
@@ -73,7 +76,7 @@ export CXX=/usr/local/bin/san-clang++
 export WRITEBC_DIR="$BITCODE_DIR"
 
 # Run the target's compile script (OSS-Fuzz convention)
-cd "$SRC/$PROJECT_NAME"
+cd "$SRC_ROOT"
 timeout "${SLICE_TIMEOUT}" compile || {
     echo "[slicer] ERROR: Bitcode compilation failed or timed out. Aborting."
     exit 1
@@ -94,9 +97,10 @@ mkdir -p "$SLICE_OUTPUT"
 
 # Set environment for slice.py (matches components/slice/slice.py expectations)
 export OUT="$SLICE_OUTPUT"
+export SRC="$SRC_ROOT"
 
 # Copy slice target file to expected location
-cp /tmp/slice_target_functions.txt "$SRC/slice_target_functions.txt"
+cp /tmp/slice_target_functions.txt "$SRC_ROOT/slice_target_functions.txt"
 
 timeout "${SLICE_TIMEOUT}" python3 /scripts/slice.py || {
     echo "[slicer] ERROR: LLVM analyzer failed or timed out. Aborting."
