@@ -1,42 +1,27 @@
-# Stage 1: Build LLVM tools (cached across targets)
-# This stage compiles LLVM 14.0.6 with static analyzer and bitcode tools
-FROM ubuntu:22.04 AS llvm-builder
+# Directed Fuzzer Slicer
+# Extends target base with LLVM tools for bitcode compilation and slicing
+#
+# Uses pre-built LLVM from prepare phase (oss-crs-prepared:latest)
+# to avoid rebuilding LLVM for each target.
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    ninja-build \
-    git \
-    python3 \
-    libssl-dev \
-    zlib1g-dev \
-    curl \
-    ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy LLVM build script and source from components
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/checkout_build_install_llvm.sh /build/
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/analyzer /build/analyzer
-COPY components/slice/oss-fuzz-aixcc/infra/base-images/base-clang/klaus /build/klaus
-
-WORKDIR /build
-RUN chmod +x checkout_build_install_llvm.sh && ./checkout_build_install_llvm.sh
-
-# Stage 2: Slicer runtime
-# Extends target base image with LLVM tools for bitcode compilation and slicing
+# ARG for target base image (passed by docker-compose during target build)
 ARG target_base_image
+
+# Reference the prepared image with LLVM tools
+FROM oss-crs-prepared:latest AS llvm-source
+
+# Final stage: extend target base with LLVM tools
 FROM ${target_base_image}
 
-# Copy pre-built LLVM tools from builder stage
-COPY --from=llvm-builder /usr/local/bin/clang* /usr/local/bin/
-COPY --from=llvm-builder /usr/local/bin/llvm-* /usr/local/bin/
-COPY --from=llvm-builder /usr/local/lib/writebc.so /usr/local/lib/
-COPY --from=llvm-builder /usr/local/bin/sancc /usr/local/bin/
-COPY --from=llvm-builder /usr/local/bin/san-clang* /usr/local/bin/
-COPY --from=llvm-builder /build/analyzer/build/lib/analyzer /usr/local/bin/analyzer
+# Copy pre-built LLVM tools from prepared image
+COPY --from=llvm-source /usr/local/bin/clang* /usr/local/bin/
+COPY --from=llvm-source /usr/local/bin/llvm-* /usr/local/bin/
+COPY --from=llvm-source /usr/local/lib/writebc.so /usr/local/lib/
+COPY --from=llvm-source /usr/local/bin/sancc /usr/local/bin/
+COPY --from=llvm-source /usr/local/bin/san-clang* /usr/local/bin/
+COPY --from=llvm-source /usr/local/bin/analyzer /usr/local/bin/analyzer
 
-# Install libCRS for artifact management
+# Install libCRS for artifact management (context passed by docker-compose)
 COPY --from=libcrs . /opt/libCRS
 RUN /opt/libCRS/install.sh
 
