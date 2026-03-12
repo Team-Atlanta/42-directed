@@ -54,7 +54,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy slicer scripts
+# Copy slice.py from components/slice (proven LLVM analyzer invocation)
+COPY components/slice/slice.py /scripts/slice.py
+
+# Copy slicer scripts (parse_diff.py is new diff-parsing logic)
 COPY oss-crs/bin/slicer.sh /slicer.sh
 COPY oss-crs/scripts/parse_diff.py /scripts/parse_diff.py
 COPY oss-crs/scripts/generate_allowlist.py /scripts/generate_allowlist.py

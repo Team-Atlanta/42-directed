@@ -87,21 +87,18 @@ if [ "$BC_COUNT" -eq 0 ]; then
 fi
 echo "[slicer] Generated $BC_COUNT bitcode files"
 
-# Step 4: Run LLVM analyzer for slicing
-echo "[slicer] Running LLVM analyzer..."
+# Step 4: Run LLVM analyzer for slicing (using slice.py from components/slice)
+echo "[slicer] Running LLVM analyzer via slice.py..."
 SLICE_OUTPUT="$OUT/slice_results"
 mkdir -p "$SLICE_OUTPUT"
 
-# Find all .bc files
-BC_FILES=$(find "$BITCODE_DIR" -name "*.bc" | tr '\n' ' ')
+# Set environment for slice.py (matches components/slice/slice.py expectations)
+export OUT="$SLICE_OUTPUT"
 
-timeout "${SLICE_TIMEOUT}" /usr/local/bin/analyzer \
-    --srcroot="$SRC/$PROJECT_NAME" \
-    --callgraph=true \
-    --slicing=true \
-    --output="$SLICE_OUTPUT" \
-    --multi=/tmp/slice_target_functions.txt \
-    $BC_FILES || {
+# Copy slice target file to expected location
+cp /tmp/slice_target_functions.txt "$SRC/slice_target_functions.txt"
+
+timeout "${SLICE_TIMEOUT}" python3 /scripts/slice.py || {
     echo "[slicer] ERROR: LLVM analyzer failed or timed out. Aborting."
     exit 1
 }
