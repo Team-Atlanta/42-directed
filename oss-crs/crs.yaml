@@ -1,0 +1,34 @@
+name: directed-fuzzer
+type:
+  - bug-finding
+version: 1.0.0
+docker_registry: ghcr.io/team-atlanta/directed-fuzzer
+
+required_inputs:
+  - diff
+
+prepare_phase:
+  hcl: oss-crs/docker-bake.hcl
+
+target_build_phase:
+  - name: build
+    dockerfile: oss-crs/dockerfiles/builder.Dockerfile
+    outputs:
+      - build
+
+crs_run_phase:
+  fuzzer:
+    dockerfile: oss-crs/dockerfiles/runner.Dockerfile
+
+supported_target:
+  mode:
+    - delta
+  language:
+    - c
+    - c++
+  sanitizer:
+    - address
+  architecture:
+    - x86_64
+  fuzzing_engine:
+    - afl
