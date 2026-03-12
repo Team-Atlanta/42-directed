@@ -41,25 +41,23 @@ COPY --from=libcrs . /opt/libCRS
 RUN /opt/libCRS/install.sh
 
 # Install Python dependencies for diff parsing and slicing
-# - tree-sitter: AST parsing to identify function boundaries
-# - tree-sitter-c: C language grammar for tree-sitter
-# - unidiff: Parse unified diff files
+# - tree-sitter-languages: Multi-language tree-sitter parser (used by diff_parser.py)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     && pip3 install --no-cache-dir \
-        tree-sitter \
-        tree-sitter-c \
-        unidiff \
+        tree-sitter-languages \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy slice.py from components/slice (proven LLVM analyzer invocation)
 COPY components/slice/slice.py /scripts/slice.py
 
-# Copy slicer scripts (parse_diff.py is new diff-parsing logic)
+# Copy diff_parser.py from components/directed (reused diff parsing logic)
+COPY components/directed/src/daemon/modules/diff_parser.py /scripts/diff_parser.py
+
+# Copy slicer scripts
 COPY oss-crs/bin/slicer.sh /slicer.sh
-COPY oss-crs/scripts/parse_diff.py /scripts/parse_diff.py
 COPY oss-crs/scripts/generate_allowlist.py /scripts/generate_allowlist.py
 RUN chmod +x /slicer.sh
 

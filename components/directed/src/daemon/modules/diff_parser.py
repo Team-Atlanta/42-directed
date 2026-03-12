@@ -1,10 +1,31 @@
 import os
 import re
+import sys
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Protocol
+
 from tree_sitter_languages import get_parser
 
-from daemon.modules.workspace import WorkspaceManager  # Assuming WorkspaceManager provides diff_path & focused repo
+if TYPE_CHECKING:
+    from daemon.modules.workspace import WorkspaceManager
+
+
+class WorkspaceProtocol(Protocol):
+    """Protocol for workspace-like objects that provide diff and repo paths."""
+    diff_path: str
+    def get_focused_repo(self) -> str | None: ...
+
+
+class SimpleWorkspace:
+    """Minimal workspace implementation for standalone CLI use."""
+    def __init__(self, diff_path: str, repo_path: str):
+        self.diff_path = diff_path
+        self._repo_path = repo_path
+
+    def get_focused_repo(self) -> str | None:
+        return self._repo_path
+
 
 class DiffParser:
     """Parse a unified diff and map changed hunks back to the affected C/C++ functions.
@@ -19,7 +40,7 @@ class DiffParser:
     # Construction helpers
     ###########################################################################
 
-    def __init__(self, workspace_manager: WorkspaceManager):
+    def __init__(self, workspace_manager: "WorkspaceManager | WorkspaceProtocol"):
         self.workspace_manager = workspace_manager
         self.diff_path = self.workspace_manager.diff_path
 
@@ -217,3 +238,70 @@ class DiffParser:
             if not (end_line < s or e < start_line)
         }
         return list(matches)
+
+
+###############################################################################
+# CLI entry point for standalone use (e.g., in Docker containers)
+###############################################################################
+
+def main():
+    """CLI entry point: parse diff files and output 'path function_name' lines.
+
+    Usage:
+        python diff_parser.py <diff_path_or_dir> <src_root>
+
+    Arguments:
+        diff_path_or_dir  Single .diff/.patch file OR directory containing them
+        src_root          Root directory of the source code
+    """
+    if len(sys.argv) != 3:
+        print("Usage: diff_parser.py <diff_path_or_dir> <src_root>", file=sys.stderr)
+        sys.exit(1)
+
+    diff_input = Path(sys.argv[1])
+    src_root = sys.argv[2]
+
+    if not diff_input.exists():
+        print(f"Error: diff path does not exist: {diff_input}", file=sys.stderr)
+        sys.exit(1)
+
+    if not Path(src_root).is_dir():
+        print(f"Error: src_root is not a directory: {src_root}", file=sys.stderr)
+        sys.exit(1)
+
+    # Collect diff files
+    if diff_input.is_dir():
+        diff_files = list(diff_input.glob('*.diff')) + list(diff_input.glob('*.patch'))
+        if not diff_files:
+            print(f"Warning: No .diff or .patch files found in {diff_input}", file=sys.stderr)
+            return
+    else:
+        diff_files = [diff_input]
+
+    # Process each diff file and collect unique (path, function) pairs
+    seen = {}
+    for diff_file in diff_files:
+        try:
+            workspace = SimpleWorkspace(str(diff_file), src_root)
+            parser = DiffParser(workspace)
+            for abs_path, func_name in parser.get_modified_functions():
+                # Convert absolute path to relative for slice target format
+                try:
+                    rel_path = Path(abs_path).relative_to(src_root)
+                except ValueError:
+                    rel_path = Path(abs_path)
+                seen[(str(rel_path), func_name)] = None
+        except FileNotFoundError as e:
+            print(f"Warning: {e}", file=sys.stderr)
+            continue
+        except ValueError as e:
+            print(f"Warning: {e}", file=sys.stderr)
+            continue
+
+    # Output in slice target format: "path function_name"
+    for (rel_path, func_name) in seen.keys():
+        print(f"{rel_path} {func_name}")
+
+
+if __name__ == "__main__":
+    main()

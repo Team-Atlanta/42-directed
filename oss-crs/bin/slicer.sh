@@ -45,9 +45,9 @@ if [ ! "$(ls -A "$DIFF_DIR" 2>/dev/null)" ]; then
 fi
 echo "[slicer] Diff files fetched: $(ls "$DIFF_DIR" | wc -l) files"
 
-# Step 2: Parse diff to identify changed functions
+# Step 2: Parse diff to identify changed functions (reuses components/directed diff_parser.py)
 echo "[slicer] Parsing diff for changed functions..."
-python3 /scripts/parse_diff.py "$DIFF_DIR" "$SRC/$PROJECT_NAME" > /tmp/slice_target_functions.txt
+python3 /scripts/diff_parser.py "$DIFF_DIR" "$SRC/$PROJECT_NAME" > /tmp/slice_target_functions.txt
 
 # Check if any functions found
 if [ ! -s /tmp/slice_target_functions.txt ]; then
