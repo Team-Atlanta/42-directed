@@ -67,22 +67,27 @@ fi
 
 # Step 3: Compile target to LLVM bitcode
 echo "[slicer] Compiling target to LLVM bitcode..."
-BITCODE_DIR="$SRC_ROOT/42_aixcc_bitcode"
+# Note: writebc plugin uses $OUT environment variable for bitcode output
+# OUT is typically /out in OSS-Fuzz environment
+BITCODE_DIR="${OUT}/42_aixcc_bitcode"
 mkdir -p "$BITCODE_DIR"
 
 # Set compiler wrappers for bitcode extraction
 export CC=/usr/local/bin/san-clang
 export CXX=/usr/local/bin/san-clang++
-export WRITEBC_DIR="$BITCODE_DIR"
+
+# Skip libfuzzer compilation - slicer only needs bitcode, not fuzzer runtime
+export FUZZING_ENGINE=none
 
 # Run the target's compile script (OSS-Fuzz convention)
+# Note: Full compile may fail due to clang 14/18 header path differences,
+# but we only need bitcode files to be generated for slicing.
 cd "$SRC_ROOT"
 timeout "${SLICE_TIMEOUT}" compile || {
-    echo "[slicer] ERROR: Bitcode compilation failed or timed out. Aborting."
-    exit 1
+    echo "[slicer] WARNING: Compile returned non-zero. Checking for bitcode files..."
 }
 
-# Verify bitcode was generated
+# Verify bitcode was generated - this is what matters for slicing
 BC_COUNT=$(find "$BITCODE_DIR" -name "*.bc" | wc -l)
 if [ "$BC_COUNT" -eq 0 ]; then
     echo "[slicer] ERROR: No bitcode files generated. Aborting."
@@ -96,11 +101,27 @@ SLICE_OUTPUT="$OUT/slice_results"
 mkdir -p "$SLICE_OUTPUT"
 
 # Set environment for slice.py (matches components/slice/slice.py expectations)
-export OUT="$SLICE_OUTPUT"
-export SRC="$SRC_ROOT"
+# slice.py expects SRC/PROJECT_NAME to be the repo path
+export SRC="$(dirname "$SRC_ROOT")"
+export PROJECT_NAME="$(basename "$SRC_ROOT")"
 
-# Copy slice target file to expected location
-cp /tmp/slice_target_functions.txt "$SRC_ROOT/slice_target_functions.txt"
+# Copy slice target file to expected location (slice.py looks for /src/slice_target_functions.txt)
+cp /tmp/slice_target_functions.txt /src/slice_target_functions.txt
+
+# Symlink bitcode to where slice.py expects (SRC/PROJECT_NAME/42_aixcc_bitcode)
+# writebc wrote to $OUT/42_aixcc_bitcode (/out/42_aixcc_bitcode)
+ln -sf "$BITCODE_DIR" "$SRC_ROOT/42_aixcc_bitcode"
+
+# Debug: verify symlink and bitcode files
+echo "[slicer] DEBUG: BITCODE_DIR=$BITCODE_DIR"
+echo "[slicer] DEBUG: Symlink created: $SRC_ROOT/42_aixcc_bitcode -> $BITCODE_DIR"
+ls -la "$SRC_ROOT/42_aixcc_bitcode" 2>&1 | head -5
+echo "[slicer] DEBUG: Bitcode files in symlinked dir:"
+find "$SRC_ROOT/42_aixcc_bitcode" -name "*.bc" 2>&1 | head -5
+
+# Set OUT for slice.py output
+export OUT="$SLICE_OUTPUT"
+echo "[slicer] DEBUG: SRC=$SRC PROJECT_NAME=$PROJECT_NAME OUT=$OUT"
 
 timeout "${SLICE_TIMEOUT}" python3 /scripts/slice.py || {
     echo "[slicer] ERROR: LLVM analyzer failed or timed out. Aborting."

@@ -15,6 +15,10 @@ ARG target_base_image=ghcr.io/aixcc-finals/base-builder:v1.3.0
 # Use ubuntu:20.04 (focal) to match base-builder's glibc 2.31
 FROM ubuntu:20.04 AS llvm-builder
 
+# Prevent apt from prompting for timezone/locale config
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -58,3 +62,8 @@ COPY --from=llvm-builder /usr/local/lib/writebc.so /usr/local/lib/
 COPY --from=llvm-builder /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-builder /usr/local/bin/san-clang* /usr/local/bin/
 COPY --from=llvm-builder /build/analyzer/build/lib/analyzer /usr/local/bin/analyzer
+
+# Symlink clang 14's expected lib path to base image's clang 18 libs
+# This allows clang 14 binaries to find compiler-rt (ASan, UBSan, libFuzzer, etc.)
+# Note: Base image has libs at /usr/local/lib/clang/18/lib/x86_64-unknown-linux-gnu/
+RUN ln -sf /usr/local/lib/clang/18 /usr/local/lib/clang/14.0.6

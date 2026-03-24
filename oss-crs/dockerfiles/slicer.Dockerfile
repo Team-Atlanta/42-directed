@@ -39,6 +39,14 @@ COPY --from=llvm-source /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/san-clang* /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/analyzer /usr/local/bin/analyzer
 
+# Symlink analyzer to where slice.py expects it ($SRC/analyzer/build/lib/analyzer)
+RUN mkdir -p /src/analyzer/build/lib && \
+    ln -sf /usr/local/bin/analyzer /src/analyzer/build/lib/analyzer
+
+# Note: No compiler-rt symlink needed for slicer.
+# Slicer sets FUZZING_ENGINE=none to skip libfuzzer compilation.
+# Bitcode generation doesn't require sanitizer runtime libraries.
+
 # Copy slice.py from components/slice (proven LLVM analyzer invocation)
 COPY components/slice/slice.py /scripts/slice.py
 

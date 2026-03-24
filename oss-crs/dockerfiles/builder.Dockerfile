@@ -20,6 +20,10 @@ COPY --from=llvm-source /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/san-clang* /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/analyzer /usr/local/bin/analyzer
 
+# Symlink clang 14's expected lib path to base image's clang 18 libs
+# Target base image has compiler-rt at /usr/local/lib/clang/18/
+RUN ln -sf /usr/local/lib/clang/18 /usr/local/lib/clang/14.0.6
+
 # Install libCRS for artifact management (context passed by docker-compose)
 COPY --from=libcrs . /opt/libCRS
 RUN /opt/libCRS/install.sh
