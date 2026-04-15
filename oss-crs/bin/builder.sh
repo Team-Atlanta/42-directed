@@ -32,16 +32,20 @@ if [ ! -f "$SLICE_DIR/AFL_LLVM_ALLOWLIST" ]; then
     exit 1
 fi
 
-# Step 2: Set up AFL++ with allowlist
+# Step 2: Set up AFL++ with allowlist for directed instrumentation
 echo "[builder] Configuring AFL++ with allowlist..."
 export AFL_LLVM_ALLOWLIST="$SLICE_DIR/AFL_LLVM_ALLOWLIST"
 echo "[builder] AFL_LLVM_ALLOWLIST=$AFL_LLVM_ALLOWLIST"
 echo "[builder] Allowlist contains $(wc -l < $AFL_LLVM_ALLOWLIST) functions"
 
-# CC and CXX should already be set to AFL++ compilers by target_base_image
-# (e.g., afl-clang-fast, afl-clang-lto)
+# Override to use AFL++ engine with allowlist-based selective instrumentation
+# AFL++ compilers are pre-installed at /src/aflplusplus/ in the base image
+export FUZZING_ENGINE=afl
+export CC=/src/aflplusplus/afl-clang-fast
+export CXX=/src/aflplusplus/afl-clang-fast++
 echo "[builder] CC=$CC"
 echo "[builder] CXX=$CXX"
+echo "[builder] FUZZING_ENGINE=$FUZZING_ENGINE"
 
 # Step 3: Run OSS-Fuzz compile
 echo "[builder] Running compile..."
