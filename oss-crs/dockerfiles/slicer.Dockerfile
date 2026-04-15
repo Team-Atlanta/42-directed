@@ -1,5 +1,5 @@
 # Directed Fuzzer Slicer
-# Extends target base with LLVM tools for bitcode compilation and slicing
+# Extends target base with complete LLVM 14 for bitcode compilation and slicing
 #
 # Uses pre-built LLVM from prepare phase (oss-crs-prepared:latest)
 # to avoid rebuilding LLVM for each target.
@@ -19,8 +19,6 @@ RUN /opt/libCRS/install.sh
 
 # Install Python dependencies for diff parsing and slicing BEFORE copying LLVM
 # (use base image's clang for wheel compilation)
-# - tree-sitter + tree-sitter-languages: Multi-language parser (used by diff_parser.py)
-# Pin versions for API compatibility (newer versions have breaking changes)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -30,7 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pre-built LLVM 14 tools from prepared image (overwrites base LLVM 18)
+# Copy complete LLVM 14 from prepared image (overwrites base LLVM 18)
 # This is done AFTER pip install to use base clang for wheel compilation
 COPY --from=llvm-source /usr/local/bin/clang* /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/llvm-* /usr/local/bin/
@@ -39,10 +37,13 @@ COPY --from=llvm-source /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/san-clang* /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/analyzer /usr/local/bin/analyzer
 
-# Symlink clang 14's resource dir to clang 18's so built-in headers
-# (stdbool.h, stddef.h etc.) and compiler-rt libs are found.
-# Safe because FUZZING_ENGINE=none avoids the compile_libfuzzer glob issue.
-RUN ln -sf /usr/local/lib/clang/18 /usr/local/lib/clang/14.0.6
+# Copy LLVM 14 complete runtime (compiler-rt, headers, fuzzer libs)
+# No symlink hack needed - this is the real LLVM 14 runtime
+COPY --from=llvm-source /usr/local/lib/clang/14.0.6/ /usr/local/lib/clang/14.0.6/
+
+# Remove clang 18 runtime to avoid compile_libfuzzer glob matching both versions
+RUN rm -rf /usr/local/lib/clang/18
+# Note: libc++ kept from base image
 
 # Copy diff_parser.py from components/directed (reused diff parsing logic)
 COPY components/directed/src/daemon/modules/diff_parser.py /scripts/diff_parser.py

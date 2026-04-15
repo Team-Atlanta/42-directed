@@ -75,17 +75,14 @@ BITCODE_DIR="$OUT/42_aixcc_bitcode"
 mkdir -p "$BITCODE_DIR"
 
 # Set compiler wrappers for bitcode extraction
+# san-clang wraps clang 14 and loads writebc.so to emit bitcode
 export CC=/usr/local/bin/san-clang
 export CXX=/usr/local/bin/san-clang++
 
-# Skip libfuzzer compilation - slicer only needs bitcode, not fuzzer runtime.
-# But targets may reference libFuzzingEngine.a in their CMake, so provide a stub.
-export FUZZING_ENGINE=none
-ar rcs /usr/lib/libFuzzingEngine.a 2>/dev/null || true
+# Use default libfuzzer engine - LLVM 14 has complete compiler-rt including fuzzer libs
+# This ensures compile_libfuzzer works and the full target build completes
 
 # Run the target's compile script (OSS-Fuzz convention)
-# Full compile may fail (e.g., clang 14 header path differences),
-# but we only need bitcode files to be generated for slicing.
 cd "$SRC/$PROJECT_NAME"
 timeout "${SLICE_TIMEOUT}" compile || {
     echo "[slicer] WARNING: Compile returned non-zero. Checking for bitcode files..."

@@ -1,12 +1,11 @@
-# Prepare Phase: Target + LLVM
-# Creates a shared base image with LLVM 14.0.6 pre-installed
+# Prepare Phase: Target + LLVM 14
+# Creates a shared base image with a complete LLVM 14.0.6 toolchain
 #
 # Build stages:
-# 1. llvm-builder: Compiles LLVM 14.0.6 with static analyzer and bitcode tools
-# 2. Final: Extends target base image with LLVM binaries
+# 1. llvm-builder: Compiles LLVM 14.0.6 with static analyzer, writebc, and san-clang
+# 2. Final: Extends target base image with complete LLVM 14 (clang, compiler-rt, headers)
 #
-# Note: libCRS is installed during target_build_phase via docker-compose,
-# not during the prepare phase.
+# This mirrors the original 42-afc-crs base-clang → base-builder chain.
 
 # Global ARG - must be declared before any FROM to use in FROM instruction
 ARG target_base_image=ghcr.io/aixcc-finals/base-builder:v1.3.0
@@ -52,18 +51,22 @@ ENV WORK=/work
 WORKDIR /build
 RUN chmod +x checkout_build_install_llvm.sh && ./checkout_build_install_llvm.sh
 
-# Stage 2: Extend target base with LLVM
+# Stage 2: Extend target base with complete LLVM 14
 FROM ${target_base_image}
 
-# Copy pre-built LLVM tools from builder stage
+# Copy complete LLVM 14 toolchain from builder stage
+# This overwrites the base image's clang 18, giving us a native LLVM 14 environment
+# with matching compiler-rt (ASan, fuzzer, etc.), headers (stdbool.h), and libs
 COPY --from=llvm-builder /usr/local/bin/clang* /usr/local/bin/
 COPY --from=llvm-builder /usr/local/bin/llvm-* /usr/local/bin/
-COPY --from=llvm-builder /usr/local/lib/writebc.so /usr/local/lib/
 COPY --from=llvm-builder /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-builder /usr/local/bin/san-clang* /usr/local/bin/
+COPY --from=llvm-builder /usr/local/lib/writebc.so /usr/local/lib/
 COPY --from=llvm-builder /build/analyzer/build/lib/analyzer /usr/local/bin/analyzer
 
-# Symlink clang 14's expected lib path to base image's clang 18 libs
-# This allows clang 14 binaries to find compiler-rt (ASan, UBSan, libFuzzer, etc.)
-# Note: Base image has libs at /usr/local/lib/clang/18/lib/x86_64-unknown-linux-gnu/
-RUN ln -sf /usr/local/lib/clang/18 /usr/local/lib/clang/14.0.6
+# Copy LLVM 14 runtime: compiler-rt, headers, fuzzer libs
+# This is the key difference from before - we copy the COMPLETE runtime
+COPY --from=llvm-builder /usr/local/lib/clang/14.0.6/ /usr/local/lib/clang/14.0.6/
+
+# Note: libc++ headers/libs are kept from the base image (clang 18).
+# The key LLVM 14 components are: clang binary, compiler-rt, writebc, san-clang, analyzer.
