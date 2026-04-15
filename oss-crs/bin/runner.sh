@@ -129,7 +129,6 @@ HARNESS="$HARNESS_PATH"
 # Skip AFL++ startup checks that don't apply in containers
 export AFL_SKIP_CPUFREQ=1
 export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
-export AFL_NO_AFFINITY=1
 
 echo "[runner] Launching AFL++ with $NUM_CORES instances on cores: ${CORES[*]}"
 
