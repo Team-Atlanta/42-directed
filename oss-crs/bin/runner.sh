@@ -1,6 +1,6 @@
 #!/bin/bash
 # Directed Fuzzer Runner
-# Downloads build artifacts and executes AFL++ against instrumented targets
+# Downloads build artifacts and executes fuzzer against instrumented targets
 #
 # Environment variables (REQUIRED):
 #   OSS_CRS_TARGET_HARNESS - Name of the harness binary to fuzz
@@ -17,7 +17,7 @@ OUT_DIR="${OUT:-/out}"
 # Environment Validation (STRICT - per user decision)
 # =============================================================================
 
-echo "[runner] Starting directed AFL++ runner..."
+echo "[runner] Starting directed fuzzer runner..."
 
 # Validate OSS_CRS_TARGET_HARNESS
 if [ -z "$OSS_CRS_TARGET_HARNESS" ]; then
@@ -88,15 +88,14 @@ parse_cpuset() {
 
 # Parse the cpuset
 parse_cpuset "$OSS_CRS_CPUSET"
-echo "[runner] Parsed ${#CORES[@]} CPU cores: ${CORES[*]}"
+NUM_CORES=${#CORES[@]}
+echo "[runner] Parsed $NUM_CORES CPU cores: ${CORES[*]}"
 
 # =============================================================================
 # Directory Setup and libCRS Registration
 # =============================================================================
 
-# Create AFL++ directories
-SYNC_DIR="/fuzzer/sync"
-mkdir -p "$SYNC_DIR"
+# Create directories
 mkdir -p /fuzzer/crashes
 mkdir -p /fuzzer/queue
 
@@ -120,59 +119,40 @@ else
 fi
 
 # =============================================================================
-# AFL++ Execution
+# libFuzzer Execution
 # =============================================================================
 
-NUM_CORES=${#CORES[@]}
-HARNESS="$HARNESS_PATH"
+# Harnesses are compiled with -fsanitize=fuzzer (libfuzzer instrumentation).
+# Use libfuzzer's built-in fork mode for parallel execution.
 
-echo "[runner] Launching AFL++ with $NUM_CORES instances on cores: ${CORES[*]}"
+echo "[runner] Launching libFuzzer with $NUM_CORES workers..."
 
-# Launch main instance (-M) on first core (RUN-07)
-# Use explicit -b core binding to avoid Docker CPU affinity issues
-afl-fuzz -M main -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[0]}" -- "$HARNESS" @@ &
-MAIN_PID=$!
-echo "[runner] Started main instance (PID $MAIN_PID) on core ${CORES[0]}"
-
-# Launch secondary instances (-S) on remaining cores (RUN-07)
-for ((i=1; i<NUM_CORES; i++)); do
-    afl-fuzz -S "secondary$i" -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[$i]}" -- "$HARNESS" @@ &
-    echo "[runner] Started secondary$i instance on core ${CORES[$i]}"
-done
-
-echo "[runner] All $NUM_CORES AFL++ instances launched"
+# Run libFuzzer with fork mode for parallelism
+# -fork=N: run N parallel workers
+# -artifact_prefix: write crashes to registered POV directory
+# -max_total_time: run until container is killed (no limit here, compose handles timeout)
+"$HARNESS_PATH" \
+    "$CORPUS_DIR" \
+    -fork="$NUM_CORES" \
+    -artifact_prefix=/fuzzer/crashes/ \
+    -print_final_stats=1 \
+    -timeout=30 \
+    -rss_limit_mb=4096 &
+FUZZER_PID=$!
+echo "[runner] libFuzzer started (PID $FUZZER_PID)"
 
 # =============================================================================
-# Crash/Seed Monitor for Continuous Submission
+# Seed Monitor for Continuous Submission
 # =============================================================================
 
 # Initialize timestamp file for incremental copy
-touch /tmp/.last_crash_check
 touch /tmp/.last_seed_check
 
-# Background crash copier - copies crashes from all instances to registered POV directory
+# Background seed copier - copies new corpus items to registered seed directory
 (
     while true; do
-        # Copy new crashes from all AFL++ instances to /fuzzer/crashes
-        find "$SYNC_DIR" -path "*/crashes/*" -type f -newer /tmp/.last_crash_check 2>/dev/null | while read -r crash; do
-            # Skip README.txt files that AFL++ creates
-            [[ "$(basename "$crash")" == "README.txt" ]] && continue
-            cp "$crash" /fuzzer/crashes/ 2>/dev/null || true
-        done
-        touch /tmp/.last_crash_check
-        sleep 5
-    done
-) &
-CRASH_MONITOR_PID=$!
-
-# Background seed copier - copies new seeds from all instances to registered seed directory
-(
-    while true; do
-        # Copy new queue items from all AFL++ instances to /fuzzer/queue
-        find "$SYNC_DIR" -path "*/queue/*" -type f -newer /tmp/.last_seed_check 2>/dev/null | while read -r seed; do
-            # Skip README.txt files and .state directories
-            [[ "$(basename "$seed")" == "README.txt" ]] && continue
-            [[ "$seed" == *".state"* ]] && continue
+        # Copy new corpus items to /fuzzer/queue for submission
+        find "$CORPUS_DIR" -type f -newer /tmp/.last_seed_check 2>/dev/null | while read -r seed; do
             cp "$seed" /fuzzer/queue/ 2>/dev/null || true
         done
         touch /tmp/.last_seed_check
@@ -181,14 +161,13 @@ CRASH_MONITOR_PID=$!
 ) &
 SEED_MONITOR_PID=$!
 
-echo "[runner] Started crash/seed monitor for continuous submission (PIDs: $CRASH_MONITOR_PID, $SEED_MONITOR_PID)"
+echo "[runner] Started seed monitor for continuous submission (PID: $SEED_MONITOR_PID)"
 
 # =============================================================================
-# Wait for AFL++ Execution
+# Wait for Fuzzer Execution
 # =============================================================================
 
-# Wait for all AFL++ instances to complete
-# This keeps the container running until fuzzing is done or killed
-wait
+# Wait for fuzzer to complete or be killed
+wait $FUZZER_PID 2>/dev/null || true
 
-echo "[runner] AFL++ execution complete"
+echo "[runner] Fuzzer execution complete"

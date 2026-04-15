@@ -1,8 +1,8 @@
 # Directed Fuzzer Runner
-# Executes AFL++ against instrumented targets with crash/seed submission
+# Executes libFuzzer harnesses with crash/seed submission
 #
 # Downloads build artifacts from builder phase via libCRS and runs
-# AFL++ fuzzing with parallel instances based on OSS_CRS_CPUSET.
+# fuzzing with parallel workers based on OSS_CRS_CPUSET.
 
 # ARG for target base image (passed by docker-compose during target build)
 ARG target_base_image

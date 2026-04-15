@@ -39,16 +39,10 @@ COPY --from=llvm-source /usr/local/bin/sancc /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/san-clang* /usr/local/bin/
 COPY --from=llvm-source /usr/local/bin/analyzer /usr/local/bin/analyzer
 
-# Symlink analyzer to where slice.py expects it ($SRC/analyzer/build/lib/analyzer)
-RUN mkdir -p /src/analyzer/build/lib && \
-    ln -sf /usr/local/bin/analyzer /src/analyzer/build/lib/analyzer
-
-# Note: No compiler-rt symlink needed for slicer.
-# Slicer sets FUZZING_ENGINE=none to skip libfuzzer compilation.
-# Bitcode generation doesn't require sanitizer runtime libraries.
-
-# Copy slice.py from components/slice (proven LLVM analyzer invocation)
-COPY components/slice/slice.py /scripts/slice.py
+# Symlink clang 14's resource dir to clang 18's so built-in headers
+# (stdbool.h, stddef.h etc.) and compiler-rt libs are found.
+# Safe because FUZZING_ENGINE=none avoids the compile_libfuzzer glob issue.
+RUN ln -sf /usr/local/lib/clang/18 /usr/local/lib/clang/14.0.6
 
 # Copy diff_parser.py from components/directed (reused diff parsing logic)
 COPY components/directed/src/daemon/modules/diff_parser.py /scripts/diff_parser.py
