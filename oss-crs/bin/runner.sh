@@ -108,15 +108,33 @@ echo "[runner] Registered POV directory for continuous submission"
 libCRS register-submit-dir seed /fuzzer/queue
 echo "[runner] Registered seed directory for continuous submission"
 
-# Set up corpus directory
-if [ -d "$OUT_DIR/corpus" ] && [ "$(ls -A "$OUT_DIR/corpus" 2>/dev/null)" ]; then
-    CORPUS_DIR="$OUT_DIR/corpus"
-    echo "[runner] Using corpus from build artifacts: $CORPUS_DIR"
-else
-    CORPUS_DIR="/corpus"
-    mkdir -p "$CORPUS_DIR"
+# Set up corpus directory - unzip seed corpus if available (OSS-Fuzz convention)
+CORPUS_DIR="/corpus"
+mkdir -p "$CORPUS_DIR"
+
+SEED_CORPUS_ZIP="$OUT_DIR/${OSS_CRS_TARGET_HARNESS}_seed_corpus.zip"
+if [ -f "$SEED_CORPUS_ZIP" ]; then
+    unzip -o -q "$SEED_CORPUS_ZIP" -d "$CORPUS_DIR" 2>/dev/null || true
+    echo "[runner] Unpacked seed corpus: $SEED_CORPUS_ZIP ($(ls "$CORPUS_DIR" | wc -l) files)"
+elif [ -d "$OUT_DIR/corpus" ] && [ "$(ls -A "$OUT_DIR/corpus" 2>/dev/null)" ]; then
+    cp -r "$OUT_DIR/corpus/"* "$CORPUS_DIR/" 2>/dev/null || true
+    echo "[runner] Using corpus directory from build artifacts"
+fi
+
+# Ensure at least one seed exists
+if [ ! "$(ls -A "$CORPUS_DIR" 2>/dev/null)" ]; then
     echo "AAAA" > "$CORPUS_DIR/initial"
     echo "[runner] Created minimal corpus: $CORPUS_DIR/initial"
+else
+    echo "[runner] Corpus contains $(ls "$CORPUS_DIR" | wc -l) seeds"
+fi
+
+# Set up dictionary if available
+DICT_FILE="$OUT_DIR/${OSS_CRS_TARGET_HARNESS}.dict"
+DICT_ARG=""
+if [ -f "$DICT_FILE" ]; then
+    DICT_ARG="-x $DICT_FILE"
+    echo "[runner] Using dictionary: $DICT_FILE"
 fi
 
 # =============================================================================
@@ -132,15 +150,14 @@ export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
 
 echo "[runner] Launching AFL++ with $NUM_CORES instances on cores: ${CORES[*]}"
 
-# Launch main instance (-M) on first core (RUN-07)
-# Use explicit -b core binding to avoid Docker CPU affinity issues
-afl-fuzz -M main -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[0]}" -- "$HARNESS" @@ &
+# Launch main instance (-M) on first core
+afl-fuzz -M main -i "$CORPUS_DIR" -o "$SYNC_DIR" $DICT_ARG -b "${CORES[0]}" -- "$HARNESS" @@ &
 MAIN_PID=$!
 echo "[runner] Started main instance (PID $MAIN_PID) on core ${CORES[0]}"
 
 # Launch secondary instances (-S) on remaining cores (RUN-07)
 for ((i=1; i<NUM_CORES; i++)); do
-    afl-fuzz -S "secondary$i" -i "$CORPUS_DIR" -o "$SYNC_DIR" -b "${CORES[$i]}" -- "$HARNESS" @@ &
+    afl-fuzz -S "secondary$i" -i "$CORPUS_DIR" -o "$SYNC_DIR" $DICT_ARG -b "${CORES[$i]}" -- "$HARNESS" @@ &
     echo "[runner] Started secondary$i instance on core ${CORES[$i]}"
 done
 
