@@ -98,15 +98,16 @@ echo "[runner] Parsed ${#CORES[@]} CPU cores: ${CORES[*]}"
 SYNC_DIR="/fuzzer/sync"
 mkdir -p "$SYNC_DIR"
 mkdir -p /fuzzer/crashes
-mkdir -p /fuzzer/queue
 
-# Register POV directory for continuous submission (RUN-03)
+# Register POV directory for continuous submission
 libCRS register-submit-dir pov /fuzzer/crashes
-echo "[runner] Registered POV directory for continuous submission"
+echo "[runner] Registered POV directory: /fuzzer/crashes"
 
-# Register seed directory for continuous submission (RUN-04)
-libCRS register-submit-dir seed /fuzzer/queue
-echo "[runner] Registered seed directory for continuous submission"
+# Register AFL++ main queue directly as seed dir
+# libCRS will pick up new files as AFL++ discovers them
+mkdir -p "$SYNC_DIR/main/queue"
+libCRS register-submit-dir seed "$SYNC_DIR/main/queue"
+echo "[runner] Registered seed directory: $SYNC_DIR/main/queue"
 
 # Set up corpus directory - unzip seed corpus if available (OSS-Fuzz convention)
 CORPUS_DIR="/corpus"
@@ -167,16 +168,11 @@ echo "[runner] All $NUM_CORES AFL++ instances launched"
 # Crash/Seed Monitor for Continuous Submission
 # =============================================================================
 
-# Initialize timestamp file for incremental copy
+# Background crash copier - copies crashes from all AFL++ instances to registered POV dir
 touch /tmp/.last_crash_check
-touch /tmp/.last_seed_check
-
-# Background crash copier - copies crashes from all instances to registered POV directory
 (
     while true; do
-        # Copy new crashes from all AFL++ instances to /fuzzer/crashes
         find "$SYNC_DIR" -path "*/crashes/*" -type f -newer /tmp/.last_crash_check 2>/dev/null | while read -r crash; do
-            # Skip README.txt files that AFL++ creates
             [[ "$(basename "$crash")" == "README.txt" ]] && continue
             cp "$crash" /fuzzer/crashes/ 2>/dev/null || true
         done
@@ -184,25 +180,8 @@ touch /tmp/.last_seed_check
         sleep 5
     done
 ) &
-CRASH_MONITOR_PID=$!
-
-# Background seed copier - copies new seeds from all instances to registered seed directory
-(
-    while true; do
-        # Copy new queue items from all AFL++ instances to /fuzzer/queue
-        find "$SYNC_DIR" -path "*/queue/*" -type f -newer /tmp/.last_seed_check 2>/dev/null | while read -r seed; do
-            # Skip README.txt files and .state directories
-            [[ "$(basename "$seed")" == "README.txt" ]] && continue
-            [[ "$seed" == *".state"* ]] && continue
-            cp "$seed" /fuzzer/queue/ 2>/dev/null || true
-        done
-        touch /tmp/.last_seed_check
-        sleep 5
-    done
-) &
-SEED_MONITOR_PID=$!
-
-echo "[runner] Started crash/seed monitor for continuous submission (PIDs: $CRASH_MONITOR_PID, $SEED_MONITOR_PID)"
+echo "[runner] Started crash monitor (PID $!)"
+# Seeds are submitted directly from $SYNC_DIR/main/queue via libCRS register-submit-dir
 
 # =============================================================================
 # Wait for AFL++ Execution
