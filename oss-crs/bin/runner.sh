@@ -98,16 +98,16 @@ echo "[runner] Parsed ${#CORES[@]} CPU cores: ${CORES[*]}"
 SYNC_DIR="/fuzzer/sync"
 mkdir -p "$SYNC_DIR"
 mkdir -p /fuzzer/crashes
+mkdir -p /fuzzer/seeds
 
 # Register POV directory for continuous submission
 libCRS register-submit-dir pov /fuzzer/crashes
 echo "[runner] Registered POV directory: /fuzzer/crashes"
 
-# Register AFL++ main queue directly as seed dir
-# libCRS will pick up new files as AFL++ discovers them
-mkdir -p "$SYNC_DIR/main/queue"
-libCRS register-submit-dir seed "$SYNC_DIR/main/queue"
-echo "[runner] Registered seed directory: $SYNC_DIR/main/queue"
+# Register a stable seed directory (NOT inside AFL++'s sync dir,
+# because AFL++ recreates main/queue/ on startup, breaking inotify)
+libCRS register-submit-dir seed /fuzzer/seeds
+echo "[runner] Registered seed directory: /fuzzer/seeds"
 
 # Set up corpus directory - unzip seed corpus if available (OSS-Fuzz convention)
 CORPUS_DIR="/corpus"
@@ -181,7 +181,21 @@ touch /tmp/.last_crash_check
     done
 ) &
 echo "[runner] Started crash monitor (PID $!)"
-# Seeds are submitted directly from $SYNC_DIR/main/queue via libCRS register-submit-dir
+
+# Background seed copier - copies new queue items from all AFL++ instances to registered seed dir
+touch /tmp/.last_seed_check
+(
+    while true; do
+        find "$SYNC_DIR" -path "*/queue/*" -type f -newer /tmp/.last_seed_check 2>/dev/null | while read -r seed; do
+            [[ "$(basename "$seed")" == "README.txt" ]] && continue
+            [[ "$seed" == *".state"* ]] && continue
+            cp "$seed" /fuzzer/seeds/ 2>/dev/null || true
+        done
+        touch /tmp/.last_seed_check
+        sleep 5
+    done
+) &
+echo "[runner] Started seed monitor (PID $!)"
 
 # =============================================================================
 # Wait for AFL++ Execution
